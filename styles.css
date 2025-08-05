@@ -44,6 +44,85 @@ body {
     backdrop-filter: blur(10px);
 }
 
+/* Logo Styles */
+.logo-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 90px;
+    height: 90px;
+    background: linear-gradient(135deg, var(--mint) 0%, #FFE5B4 50%, #FFF8DC 100%);
+    border-radius: 50%;
+    margin-bottom: 15px;
+    position: relative;
+    box-shadow: 0 8px 25px rgba(19, 111, 99, 0.2);
+    transition: all 0.3s ease;
+    border: 3px solid rgba(255, 255, 255, 0.8);
+}
+
+.logo:hover {
+    transform: scale(1.05);
+    box-shadow: 0 12px 35px rgba(19, 111, 99, 0.3);
+}
+
+/* Sun in the background */
+.logo::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(45deg, #FFD700, #FFA500);
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+/* Sun rays */
+.logo::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 24px;
+    height: 24px;
+    background: transparent;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    background-image: 
+        radial-gradient(circle at 50% 0%, #FFD700 1px, transparent 1px),
+        radial-gradient(circle at 100% 50%, #FFD700 1px, transparent 1px),
+        radial-gradient(circle at 50% 100%, #FFD700 1px, transparent 1px),
+        radial-gradient(circle at 0% 50%, #FFD700 1px, transparent 1px);
+}
+
+.logo-icon {
+    font-size: 2.2rem;
+    background: linear-gradient(45deg, var(--rose), var(--indigo));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    z-index: 2;
+    position: relative;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.logo-image {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    z-index: 2;
+    position: relative;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
 .title {
     font-size: 2.5rem;
     font-weight: 700;
