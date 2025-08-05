@@ -206,7 +206,7 @@ class PrayerTimesApp {
     highlightCurrentPrayer() {
         // Remove previous highlights
         document.querySelectorAll('.prayer-card').forEach(card => {
-            card.classList.remove('active', 'next');
+            card.classList.remove('active', 'next', 'passed');
         });
 
         const now = new Date();
@@ -215,7 +215,9 @@ class PrayerTimesApp {
         const prayerOrder = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
         let nextPrayer = null;
         let currentPrayer = null;
+        let passedPrayers = [];
 
+        // Find current prayer window and passed prayers
         for (let i = 0; i < prayerOrder.length; i++) {
             const prayerName = prayerOrder[i];
             const prayerTime = this.prayerTimes[this.getPrayerApiName(prayerName)];
@@ -228,7 +230,7 @@ class PrayerTimesApp {
                     nextPrayer = prayerName;
                     break;
                 } else {
-                    currentPrayer = prayerName;
+                    passedPrayers.push(prayerName);
                 }
             }
         }
@@ -236,9 +238,27 @@ class PrayerTimesApp {
         // If no next prayer found, next prayer is tomorrow's Fajr
         if (!nextPrayer) {
             nextPrayer = 'fajr';
+            // All prayers have passed today
+            passedPrayers = prayerOrder.slice();
+        } else {
+            // Current prayer is the one just before next prayer
+            const nextIndex = prayerOrder.indexOf(nextPrayer);
+            if (nextIndex > 0) {
+                currentPrayer = prayerOrder[nextIndex - 1];
+                // Remove current prayer from passed prayers
+                passedPrayers = passedPrayers.filter(prayer => prayer !== currentPrayer);
+            }
         }
 
-        // Highlight current and next prayers
+        // Apply styles to passed prayers
+        passedPrayers.forEach(prayerName => {
+            const card = document.querySelector(`[data-prayer="${prayerName}"]`);
+            if (card) {
+                card.classList.add('passed');
+            }
+        });
+
+        // Highlight current prayer (prayer window we're in)
         if (currentPrayer) {
             const currentCard = document.querySelector(`[data-prayer="${currentPrayer}"]`);
             if (currentCard) {
@@ -246,6 +266,7 @@ class PrayerTimesApp {
             }
         }
 
+        // Highlight next prayer
         if (nextPrayer) {
             const nextCard = document.querySelector(`[data-prayer="${nextPrayer}"]`);
             if (nextCard) {

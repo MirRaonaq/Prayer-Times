@@ -350,8 +350,79 @@ body {
 
 .prayer-card.active {
     border-color: var(--teal);
-    background: linear-gradient(135deg, rgba(19, 111, 99, 0.1), rgba(107, 92, 165, 0.05));
-    box-shadow: 0 12px 30px rgba(19, 111, 99, 0.2);
+    background: linear-gradient(135deg, rgba(19, 111, 99, 0.15), rgba(107, 92, 165, 0.08));
+    box-shadow: 0 12px 30px rgba(19, 111, 99, 0.25);
+    transform: scale(1.02);
+    position: relative;
+}
+
+.prayer-card.active::after {
+    content: '🔔 Current Prayer';
+    position: absolute;
+    top: -8px;
+    right: 15px;
+    background: var(--teal);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(19, 111, 99, 0.3);
+    animation: gentle-glow 2s infinite;
+}
+
+@keyframes gentle-glow {
+    0%, 100% {
+        box-shadow: 0 2px 8px rgba(19, 111, 99, 0.3);
+    }
+    50% {
+        box-shadow: 0 4px 15px rgba(19, 111, 99, 0.5);
+    }
+}
+
+.prayer-card.active .prayer-time {
+    color: var(--teal);
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(19, 111, 99, 0.1);
+    font-size: 2.2rem;
+}
+
+.prayer-card.active .prayer-info h3 {
+    color: var(--teal);
+    font-weight: 700;
+}
+
+.prayer-card.active .prayer-icon i {
+    color: var(--teal);
+    transform: scale(1.1);
+    animation: gentle-pulse 2s infinite;
+}
+
+.prayer-card.passed {
+    opacity: 0.7;
+    background: rgba(0, 0, 0, 0.01);
+    border-color: rgba(0, 0, 0, 0.05);
+    transform: scale(0.98);
+}
+
+.prayer-card.passed .prayer-time {
+    color: #666;
+    font-weight: 500;
+}
+
+.prayer-card.passed .prayer-info h3 {
+    color: #666;
+    font-weight: 500;
+}
+
+.prayer-card.passed .prayer-icon i {
+    color: #888;
+    transform: scale(0.95);
+}
+
+.prayer-card.passed:hover {
+    transform: scale(1.0);
+    opacity: 0.85;
 }
 
 .prayer-card.next {
