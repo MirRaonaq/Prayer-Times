@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prayer Times</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <h1 class="title">
+                    <i class="fas fa-mosque"></i>
+                    Prayer Times
+                </h1>
+                <p class="subtitle">Your daily prayer schedule</p>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="location-section">
+                <div class="location-info">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span id="location-text">Getting your location...</span>
+                </div>
+                <div class="location-buttons">
+                    <button id="change-location-btn" class="change-location-btn">
+                        <i class="fas fa-edit"></i>
+                        Change Location
+                    </button>
+                    <button id="refresh-btn" class="refresh-btn">
+                        <i class="fas fa-sync-alt"></i>
+                        Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- Location Modal -->
+            <div id="location-modal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3><i class="fas fa-map-marker-alt"></i> Change Location</h3>
+                        <button id="close-modal" class="close-btn">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="location-tabs">
+                            <button class="tab-btn active" data-tab="city">Search by City</button>
+                            <button class="tab-btn" data-tab="coordinates">Enter Coordinates</button>
+                        </div>
+                        
+                        <div class="tab-content active" id="city-tab">
+                            <div class="input-group">
+                                <label for="city-input">City Name:</label>
+                                <div class="autocomplete-container">
+                                    <input type="text" id="city-input" placeholder="Start typing a city name...">
+                                    <div id="autocomplete-results" class="autocomplete-results"></div>
+                                </div>
+                                <button id="search-city-btn" class="search-btn">
+                                    <i class="fas fa-search"></i>
+                                    Search
+                                </button>
+                            </div>
+                            <div id="search-results" class="search-results" style="display: none;">
+                                <h4>Select a location:</h4>
+                                <div id="results-list" class="results-list"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="tab-content" id="coordinates-tab">
+                            <div class="input-group">
+                                <label for="latitude-input">Latitude:</label>
+                                <input type="number" id="latitude-input" placeholder="e.g., 40.7128" step="any">
+                            </div>
+                            <div class="input-group">
+                                <label for="longitude-input">Longitude:</label>
+                                <input type="number" id="longitude-input" placeholder="e.g., -74.0060" step="any">
+                            </div>
+                            <button id="use-coordinates-btn" class="search-btn">
+                                <i class="fas fa-check"></i>
+                                Use Coordinates
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="loading-container" id="loading">
+                <div class="loading-spinner"></div>
+                <p>Loading prayer times...</p>
+            </div>
+
+            <div class="prayer-times" id="prayer-times">
+                <div class="prayer-card" data-prayer="fajr">
+                    <div class="prayer-icon">
+                        <i class="fas fa-sun"></i>
+                    </div>
+                    <div class="prayer-info">
+                        <h3>Fajr</h3>
+                        <p class="prayer-time" id="fajr-time">--:--</p>
+                        <p class="prayer-desc">Dawn Prayer</p>
+                    </div>
+                </div>
+
+                <div class="prayer-card" data-prayer="dhuhr">
+                    <div class="prayer-icon">
+                        <i class="fas fa-sun"></i>
+                    </div>
+                    <div class="prayer-info">
+                        <h3>Dhuhr</h3>
+                        <p class="prayer-time" id="dhuhr-time">--:--</p>
+                        <p class="prayer-desc">Noon Prayer</p>
+                    </div>
+                </div>
+
+                <div class="prayer-card" data-prayer="asr">
+                    <div class="prayer-icon">
+                        <i class="fas fa-sun"></i>
+                    </div>
+                    <div class="prayer-info">
+                        <h3>Asr</h3>
+                        <p class="prayer-time" id="asr-time">--:--</p>
+                        <p class="prayer-desc">Afternoon Prayer</p>
+                    </div>
+                </div>
+
+                <div class="prayer-card" data-prayer="maghrib">
+                    <div class="prayer-icon">
+                        <i class="fas fa-moon"></i>
+                    </div>
+                    <div class="prayer-info">
+                        <h3>Maghrib</h3>
+                        <p class="prayer-time" id="maghrib-time">--:--</p>
+                        <p class="prayer-desc">Sunset Prayer</p>
+                    </div>
+                </div>
+
+                <div class="prayer-card" data-prayer="isha">
+                    <div class="prayer-icon">
+                        <i class="fas fa-moon"></i>
+                    </div>
+                    <div class="prayer-info">
+                        <h3>Isha</h3>
+                        <p class="prayer-time" id="isha-time">--:--</p>
+                        <p class="prayer-desc">Night Prayer</p>
+                    </div>
+                </div>
+            </div>
+
+                                  <!-- Quote of the Day Section -->
+                      <div class="verse-section" id="verse-section">
+                          <div class="verse-header">
+                              <i class="fas fa-quote-left"></i>
+                              <h3>Quote of the Day</h3>
+                          </div>
+                          <div class="verse-content" id="verse-content">
+                              <div class="verse-loading">
+                                  <div class="loading-spinner"></div>
+                                  <p>Loading quote...</p>
+                              </div>
+                          </div>
+                          <div class="verse-actions">
+                              <button id="new-verse-btn" class="new-verse-btn">
+                                  <i class="fas fa-random"></i>
+                                  New Quote
+                              </button>
+                              <button id="verse-explanation-btn" class="verse-explanation-btn" style="display: none;">
+                                  <i class="fas fa-info-circle"></i>
+                                  Reflection
+                              </button>
+                          </div>
+                      </div>
+
+            <div class="error-container" id="error-container" style="display: none;">
+                <div class="error-content">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3>Error</h3>
+                    <p id="error-message">Something went wrong. Please try again.</p>
+                    <button id="retry-btn" class="retry-btn">Retry</button>
+                </div>
+            </div>
+
+            <div class="date-info">
+                <p id="date-display">Loading date...</p>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>Privacy first: This site runs entirely in your browser. If you share your location, it’s used only to calculate today’s prayer times—nothing is stored, logged, or sent anywhere.</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 
