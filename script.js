@@ -5,6 +5,13 @@ class PrayerTimesApp {
         this.currentTime = new Date();
         this.currentAutocompleteLocations = [];
         
+        // Rate limiting for API calls
+        this.lastApiCall = 0;
+        this.apiCooldown = 5000; // 5 seconds between API calls
+        this.quotesCache = [];
+        this.cacheExpiry = 300000; // 5 minutes cache
+        this.maxCacheSize = 5;
+        
         this.initializeElements();
         this.bindEvents();
         this.updateDateDisplay();
@@ -671,8 +678,25 @@ class PrayerTimesApp {
         try {
             this.showQuoteLoading();
             
-            // Try to fetch from API first
+            // Check rate limiting
+            const now = Date.now();
+            const timeSinceLastCall = now - this.lastApiCall;
+            
+            // If within cooldown period, use cache or fallback
+            if (timeSinceLastCall < this.apiCooldown) {
+                console.log(`Rate limited: ${Math.ceil((this.apiCooldown - timeSinceLastCall) / 1000)}s remaining`);
+                return this.useQuoteFromCacheOrFallback();
+            }
+            
+            // Check cache first
+            if (this.quotesCache.length > 0 && Math.random() < 0.3) { // 30% chance to use cache
+                console.log('Using cached quote to reduce API calls');
+                return this.useQuoteFromCache();
+            }
+            
+            // Try to fetch from API
             try {
+                this.lastApiCall = now;
                 const response = await fetch('https://prayer-times-api.azurewebsites.net/api/getrandomquote', {
                     method: 'GET',
                     headers: {
@@ -684,17 +708,69 @@ class PrayerTimesApp {
                     const data = await response.json();
                     if (data.success && data.quote) {
                         console.log('Quote fetched from API:', data.quote.id);
+                        
+                        // Add to cache
+                        this.addToQuotesCache(data.quote);
+                        
                         this.displayQuote(data.quote);
-                        return; // Successfully got quote from API
+                        return;
                     }
                 }
             } catch (apiError) {
-                console.warn('API fetch failed, falling back to hardcoded quotes:', apiError.message);
+                console.warn('API fetch failed, falling back to cached or hardcoded quotes:', apiError.message);
             }
 
-            // Fallback to hardcoded quotes if API fails
-            console.log('Using fallback hardcoded quotes');
-            const quotes = [
+            // Use cache or fallback
+            this.useQuoteFromCacheOrFallback();
+            
+        } catch (error) {
+            console.error('Quote fetch error:', error);
+            this.showQuoteError('Unable to fetch quote. Please try again.');
+        }
+    }
+
+    // Cache management methods
+    addToQuotesCache(quote) {
+        // Add timestamp to quote
+        const cachedQuote = { ...quote, cachedAt: Date.now() };
+        
+        // Remove duplicates
+        this.quotesCache = this.quotesCache.filter(q => q.id !== quote.id);
+        
+        // Add new quote
+        this.quotesCache.unshift(cachedQuote);
+        
+        // Limit cache size
+        if (this.quotesCache.length > this.maxCacheSize) {
+            this.quotesCache = this.quotesCache.slice(0, this.maxCacheSize);
+        }
+        
+        console.log(`Quote ${quote.id} added to cache. Cache size: ${this.quotesCache.length}`);
+    }
+
+    useQuoteFromCache() {
+        // Filter out expired cache entries
+        const now = Date.now();
+        this.quotesCache = this.quotesCache.filter(q => (now - q.cachedAt) < this.cacheExpiry);
+        
+        if (this.quotesCache.length > 0) {
+            const randomCachedQuote = this.quotesCache[Math.floor(Math.random() * this.quotesCache.length)];
+            console.log('Using cached quote:', randomCachedQuote.id);
+            this.displayQuote(randomCachedQuote);
+            return true;
+        }
+        return false;
+    }
+
+    useQuoteFromCacheOrFallback() {
+        // Try cache first
+        if (this.useQuoteFromCache()) {
+            return;
+        }
+        
+        // Use hardcoded fallback
+        console.log('Using fallback hardcoded quotes');
+        const quotes = [
                 {
                     arabic: "إِنَّ اللَّهَ مَعَ الصَّابِرِينَ",
                     english: "Indeed, Allah is with the patient.",
@@ -762,11 +838,6 @@ class PrayerTimesApp {
             const quote = quotes[randomIndex];
             
             this.displayQuote(quote);
-            
-        } catch (error) {
-            console.error('Quote fetch error:', error);
-            this.showQuoteError('Unable to fetch quote. Please try again.');
-        }
     }
 
     displayQuote(quote) {
