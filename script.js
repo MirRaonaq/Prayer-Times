@@ -671,7 +671,29 @@ class PrayerTimesApp {
         try {
             this.showQuoteLoading();
             
-            // Array of inspirational Quranic quotes with translations
+            // Try to fetch from API first
+            try {
+                const response = await fetch('https://prayer-times-api.azurewebsites.net/api/getrandomquote', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.quote) {
+                        console.log('Quote fetched from API:', data.quote.id);
+                        this.displayQuote(data.quote);
+                        return; // Successfully got quote from API
+                    }
+                }
+            } catch (apiError) {
+                console.warn('API fetch failed, falling back to hardcoded quotes:', apiError.message);
+            }
+
+            // Fallback to hardcoded quotes if API fails
+            console.log('Using fallback hardcoded quotes');
             const quotes = [
                 {
                     arabic: "إِنَّ اللَّهَ مَعَ الصَّابِرِينَ",
@@ -735,7 +757,7 @@ class PrayerTimesApp {
                 }
             ];
             
-            // Select a random quote
+            // Select a random quote from fallback
             const randomIndex = Math.floor(Math.random() * quotes.length);
             const quote = quotes[randomIndex];
             
