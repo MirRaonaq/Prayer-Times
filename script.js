@@ -302,29 +302,32 @@ class PrayerTimesApp {
     }
 
     showLoading() {
+        this.loadingContainer.classList.remove('hidden');
         this.loadingContainer.style.display = 'flex';
-        this.prayerTimesContainer.style.display = 'none';
-        this.errorContainer.style.display = 'none';
+        this.prayerTimesContainer.classList.add('hidden');
+        this.errorContainer.classList.add('hidden');
     }
 
     hideLoading() {
-        this.loadingContainer.style.display = 'none';
+        this.loadingContainer.classList.add('hidden');
     }
 
     showPrayerTimes() {
+        this.prayerTimesContainer.classList.remove('hidden');
         this.prayerTimesContainer.style.display = 'grid';
-        this.errorContainer.style.display = 'none';
+        this.errorContainer.classList.add('hidden');
     }
 
     showError(message) {
         this.errorMessage.textContent = message;
+        this.errorContainer.classList.remove('hidden');
         this.errorContainer.style.display = 'block';
-        this.loadingContainer.style.display = 'none';
-        this.prayerTimesContainer.style.display = 'none';
+        this.loadingContainer.classList.add('hidden');
+        this.prayerTimesContainer.classList.add('hidden');
     }
 
     hideError() {
-        this.errorContainer.style.display = 'none';
+        this.errorContainer.classList.add('hidden');
     }
 
     // Modal methods
@@ -428,6 +431,7 @@ class PrayerTimesApp {
             this.resultsList.appendChild(resultElement);
         });
         
+        this.searchResults.classList.remove('hidden');
         this.searchResults.style.display = 'block';
     }
 
@@ -443,7 +447,7 @@ class PrayerTimesApp {
     }
 
     hideSearchResults() {
-        this.searchResults.style.display = 'none';
+        this.searchResults.classList.add('hidden');
         this.resultsList.innerHTML = '';
     }
 
@@ -487,6 +491,7 @@ class PrayerTimesApp {
             this.autocompleteResults.appendChild(itemElement);
         });
         
+        this.autocompleteResults.classList.remove('hidden');
         this.autocompleteResults.style.display = 'block';
     }
 
@@ -504,7 +509,7 @@ class PrayerTimesApp {
     }
 
     hideAutocomplete() {
-        this.autocompleteResults.style.display = 'none';
+        this.autocompleteResults.classList.add('hidden');
         this.autocompleteResults.innerHTML = '';
     }
 
@@ -848,24 +853,26 @@ class PrayerTimesApp {
                 <i class="fas fa-book"></i>
                 ${quote.reference}
             </div>
-            <div class="verse-explanation" style="display: none;">
+            <div class="verse-explanation hidden">
                 <strong>Reflection:</strong><br>
                 ${quote.translation}
             </div>
         `;
         
+        this.verseExplanationBtn.classList.remove('hidden');
         this.verseExplanationBtn.style.display = 'inline-flex';
         this.currentQuoteData = quote;
     }
 
     toggleQuoteExplanation() {
         const explanationDiv = this.verseContent.querySelector('.verse-explanation');
-        const isVisible = explanationDiv.style.display !== 'none';
+        const isVisible = !explanationDiv.classList.contains('hidden');
         
         if (isVisible) {
-            explanationDiv.style.display = 'none';
+            explanationDiv.classList.add('hidden');
             this.verseExplanationBtn.innerHTML = '<i class="fas fa-info-circle"></i> Reflection';
         } else {
+            explanationDiv.classList.remove('hidden');
             explanationDiv.style.display = 'block';
             this.verseExplanationBtn.innerHTML = '<i class="fas fa-eye-slash"></i> Hide';
         }
@@ -878,7 +885,7 @@ class PrayerTimesApp {
                 <p>Loading quote...</p>
             </div>
         `;
-        this.verseExplanationBtn.style.display = 'none';
+        this.verseExplanationBtn.classList.add('hidden');
     }
 
     showQuoteError(message) {
@@ -888,7 +895,7 @@ class PrayerTimesApp {
                 <p>${message}</p>
             </div>
         `;
-        this.verseExplanationBtn.style.display = 'none';
+        this.verseExplanationBtn.classList.add('hidden');
     }
 }
 

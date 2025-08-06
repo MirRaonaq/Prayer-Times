@@ -48,7 +48,7 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <h3><i class="fas fa-map-marker-alt"></i> Change Location</h3>
-                        <button id="close-modal" class="close-btn">
+                        <button id="close-modal" class="close-btn" title="Close modal" aria-label="Close location selection modal">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
@@ -70,7 +70,7 @@
                                     Search
                                 </button>
                             </div>
-                            <div id="search-results" class="search-results" style="display: none;">
+                            <div id="search-results" class="search-results hidden">
                                 <h4>Select a location:</h4>
                                 <div id="results-list" class="results-list"></div>
                             </div>
@@ -173,14 +173,14 @@
                                   <i class="fas fa-random"></i>
                                   New Quote
                               </button>
-                              <button id="verse-explanation-btn" class="verse-explanation-btn" style="display: none;">
+                              <button id="verse-explanation-btn" class="verse-explanation-btn hidden">
                                   <i class="fas fa-info-circle"></i>
                                   Reflection
                               </button>
                           </div>
                       </div>
 
-            <div class="error-container" id="error-container" style="display: none;">
+            <div class="error-container hidden" id="error-container">
                 <div class="error-content">
                     <i class="fas fa-exclamation-triangle"></i>
                     <h3>Error</h3>
