@@ -218,7 +218,6 @@ class PrayerTimesApp {
 
         const now = new Date();
         const currentTime = now.getHours() * 60 + now.getMinutes();
-        
         const prayerOrder = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
         let nextPrayer = null;
         let currentPrayer = null;
@@ -228,11 +227,9 @@ class PrayerTimesApp {
         for (let i = 0; i < prayerOrder.length; i++) {
             const prayerName = prayerOrder[i];
             const prayerTime = this.prayerTimes[this.getPrayerApiName(prayerName)];
-            
             if (prayerTime) {
                 const [hours, minutes] = prayerTime.split(':');
                 const prayerMinutes = parseInt(hours) * 60 + parseInt(minutes);
-                
                 if (prayerMinutes > currentTime) {
                     nextPrayer = prayerName;
                     break;
@@ -245,15 +242,44 @@ class PrayerTimesApp {
         // If no next prayer found, next prayer is tomorrow's Fajr
         if (!nextPrayer) {
             nextPrayer = 'fajr';
-            // All prayers have passed today
             passedPrayers = prayerOrder.slice();
         } else {
-            // Current prayer is the one just before next prayer
             const nextIndex = prayerOrder.indexOf(nextPrayer);
             if (nextIndex > 0) {
                 currentPrayer = prayerOrder[nextIndex - 1];
-                // Remove current prayer from passed prayers
                 passedPrayers = passedPrayers.filter(prayer => prayer !== currentPrayer);
+            }
+        }
+
+        // Special logic for Isha: keep highlighted until midnight
+        const ishaTime = this.prayerTimes[this.getPrayerApiName('isha')];
+        if (ishaTime) {
+            const [ishaHour, ishaMinute] = ishaTime.split(':');
+            const ishaMinutes = parseInt(ishaHour) * 60 + parseInt(ishaMinute);
+            // If current time is after Isha and before midnight
+            if (currentTime >= ishaMinutes && now.getHours() < 24) {
+                // Remove 'active' from other cards
+                document.querySelectorAll('.prayer-card').forEach(card => {
+                    card.classList.remove('active');
+                });
+                // Highlight Isha card only
+                const ishaCard = document.querySelector('[data-prayer="isha"]');
+                if (ishaCard) {
+                    ishaCard.classList.add('active');
+                }
+                // Mark all previous prayers as passed
+                ['fajr', 'dhuhr', 'asr', 'maghrib'].forEach(prayerName => {
+                    const card = document.querySelector(`[data-prayer="${prayerName}"]`);
+                    if (card) {
+                        card.classList.add('passed');
+                    }
+                });
+                // Next prayer is Fajr (tomorrow)
+                const nextCard = document.querySelector('[data-prayer="fajr"]');
+                if (nextCard) {
+                    nextCard.classList.add('next');
+                }
+                return;
             }
         }
 
