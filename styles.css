@@ -380,6 +380,10 @@ body {
     animation: gentle-glow 2s infinite;
 }
 
+.prayer-card.fajr-in-progress.active::after {
+    content: '🌅 Fajr in progress';
+}
+
 @keyframes gentle-glow {
     0%, 100% {
         box-shadow: 0 2px 8px rgba(19, 111, 99, 0.3);

@@ -160,29 +160,38 @@ class PrayerTimesApp {
             const { latitude, longitude } = this.currentLocation;
             const today = new Date();
             const date = today.toISOString().split('T')[0];
-            
+
             // Using Aladhan API for prayer times
             const url = `https://api.aladhan.com/v1/timings/${date}?latitude=${latitude}&longitude=${longitude}&method=2`;
-            
+
             const response = await fetch(url);
             if (!response.ok) {
                 throw new Error('Failed to fetch prayer times');
             }
-            
+
             const data = await response.json();
+            if (!data || !data.data || !data.data.timings) {
+                throw new Error('Prayer times data missing');
+            }
             this.prayerTimes = data.data.timings;
-            
+
             this.displayPrayerTimes();
             this.hideLoading();
             this.showPrayerTimes();
-            
+
         } catch (error) {
             console.error('Prayer times fetch error:', error);
+            this.hideLoading();
             this.showError('Unable to fetch prayer times. Please check your internet connection and try again.');
         }
     }
 
     displayPrayerTimes() {
+        if (!this.prayerTimes) {
+            this.hideLoading();
+            this.showError('Prayer times are not available.');
+            return;
+        }
         const prayerNames = {
             Fajr: 'fajr',
             Dhuhr: 'dhuhr',
@@ -198,7 +207,13 @@ class PrayerTimesApp {
             }
         });
 
-        this.highlightCurrentPrayer();
+        try {
+            this.highlightCurrentPrayer();
+        } catch (err) {
+            console.error('Error in highlightCurrentPrayer:', err);
+            this.hideLoading();
+            this.showError('Error displaying prayer highlights.');
+        }
     }
 
     formatTime(timeString) {
@@ -222,6 +237,17 @@ class PrayerTimesApp {
         let nextPrayer = null;
         let currentPrayer = null;
         let passedPrayers = [];
+
+        // Get Fajr and Sunrise times
+        const fajrTime = this.prayerTimes[this.getPrayerApiName('fajr')];
+        const sunriseTime = this.prayerTimes['Sunrise'];
+        let fajrMinutes = null, sunriseMinutes = null;
+        if (fajrTime && sunriseTime) {
+            const [fajrHour, fajrMinute] = fajrTime.split(':');
+            fajrMinutes = parseInt(fajrHour) * 60 + parseInt(fajrMinute);
+            const [sunriseHour, sunriseMinute] = sunriseTime.split(':');
+            sunriseMinutes = parseInt(sunriseHour) * 60 + parseInt(sunriseMinute);
+        }
 
         // Find current prayer window and passed prayers
         for (let i = 0; i < prayerOrder.length; i++) {
@@ -258,28 +284,75 @@ class PrayerTimesApp {
             const ishaMinutes = parseInt(ishaHour) * 60 + parseInt(ishaMinute);
             // If current time is after Isha and before midnight
             if (currentTime >= ishaMinutes && now.getHours() < 24) {
-                // Remove 'active' from other cards
                 document.querySelectorAll('.prayer-card').forEach(card => {
                     card.classList.remove('active');
                 });
-                // Highlight Isha card only
                 const ishaCard = document.querySelector('[data-prayer="isha"]');
                 if (ishaCard) {
                     ishaCard.classList.add('active');
                 }
-                // Mark all previous prayers as passed
                 ['fajr', 'dhuhr', 'asr', 'maghrib'].forEach(prayerName => {
                     const card = document.querySelector(`[data-prayer="${prayerName}"]`);
                     if (card) {
                         card.classList.add('passed');
                     }
                 });
-                // Next prayer is Fajr (tomorrow)
                 const nextCard = document.querySelector('[data-prayer="fajr"]');
                 if (nextCard) {
                     nextCard.classList.add('next');
                 }
                 return;
+            }
+        }
+
+        // Fajr highlight logic: only highlight Fajr until sunrise
+        if (fajrMinutes !== null && sunriseMinutes !== null) {
+            const fajrCard = document.querySelector('[data-prayer="fajr"]');
+            const dhuhrMinutes = this.getPrayerMinutes('dhuhr');
+            if (currentTime >= fajrMinutes && currentTime < sunriseMinutes) {
+                // Highlight Fajr with a special class
+                if (fajrCard) {
+                    fajrCard.classList.add('active', 'fajr-in-progress');
+                    fajrCard.classList.remove('passed');
+                }
+                // Highlight next prayer (Dhuhr)
+                const nextCard = document.querySelector('[data-prayer="dhuhr"]');
+                if (nextCard) {
+                    nextCard.classList.add('next');
+                }
+                // Remove 'active' from other prayers
+                ['dhuhr', 'asr', 'maghrib', 'isha'].forEach(prayerName => {
+                    const card = document.querySelector(`[data-prayer="${prayerName}"]`);
+                    if (card) {
+                        card.classList.remove('active', 'fajr-in-progress');
+                    }
+                });
+                return;
+            } else if (currentTime >= sunriseMinutes && currentTime < dhuhrMinutes) {
+                // Between sunrise and Dhuhr: no current prayer
+                if (fajrCard) {
+                    fajrCard.classList.remove('active', 'fajr-in-progress');
+                    fajrCard.classList.add('passed');
+                }
+                // Remove 'active' from all other prayers
+                ['dhuhr', 'asr', 'maghrib', 'isha'].forEach(prayerName => {
+                    const card = document.querySelector(`[data-prayer="${prayerName}"]`);
+                    if (card) {
+                        card.classList.remove('active', 'fajr-in-progress');
+                    }
+                });
+                // Highlight next prayer (Dhuhr)
+                const nextCard = document.querySelector('[data-prayer="dhuhr"]');
+                if (nextCard) {
+                    nextCard.classList.add('next');
+                }
+                return;
+            } else {
+                // After sunrise, Fajr is not active
+                if (fajrCard) {
+                    fajrCard.classList.remove('active', 'fajr-in-progress');
+                    fajrCard.classList.add('passed');
+                }
             }
         }
 
@@ -306,6 +379,13 @@ class PrayerTimesApp {
                 nextCard.classList.add('next');
             }
         }
+    }
+
+    getPrayerMinutes(prayerName) {
+        const prayerTime = this.prayerTimes[this.getPrayerApiName(prayerName)];
+        if (!prayerTime) return null;
+        const [hour, minute] = prayerTime.split(':');
+        return parseInt(hour) * 60 + parseInt(minute);
     }
 
     getPrayerApiName(prayerName) {
