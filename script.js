@@ -540,6 +540,10 @@ class PrayerTimesApp {
 
             if (loadingEl) loadingEl.classList.add('hidden');
             this.renderPrayerLogRows(listEl, noTimesEl, existingLogs);
+
+            // Compute and display streak
+            const streak = await this.computeStreak(existingLogs);
+            this.displayStreak(streak);
         } catch (error) {
             console.error('Error loading prayer log:', error);
             if (loadingEl) loadingEl.classList.add('hidden');
@@ -620,6 +624,70 @@ class PrayerTimesApp {
             console.error('Error saving prayer check:', error);
             rowEl.classList.remove('done');
             if (checkboxEl) checkboxEl.innerHTML = '';
+        }
+    }
+
+    async computeStreak(todayLogs) {
+        if (!this.currentUser) return 0;
+
+        const prayers = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+
+        // Generate last 14 local dates (index 0 = today)
+        const dates = [];
+        for (let i = 0; i < 14; i++) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            dates.push(d.toLocaleDateString('en-CA'));
+        }
+
+        // Check today using already-fetched logs (no extra Firestore read)
+        const completions = {};
+        completions[dates[0]] = prayers.every(p => !!todayLogs[p]);
+
+        // Fetch remaining 13 days in parallel
+        const otherDates = dates.slice(1);
+        try {
+            const snapshots = await Promise.all(
+                otherDates.map(date =>
+                    this.getDocs(this.collection(this.firebaseDb, 'prayerLogs', this.currentUser.uid, date))
+                )
+            );
+            otherDates.forEach((date, i) => {
+                const logged = {};
+                snapshots[i].forEach(docSnap => { logged[docSnap.id] = true; });
+                completions[date] = prayers.every(p => logged[p]);
+            });
+        } catch (error) {
+            console.error('Error computing streak:', error);
+            return completions[dates[0]] ? 1 : 0;
+        }
+
+        // Count consecutive complete days from today backward
+        let streak = 0;
+        for (const date of dates) {
+            if (completions[date]) {
+                streak++;
+            } else {
+                break;
+            }
+        }
+        return streak;
+    }
+
+    displayStreak(count) {
+        const banner = document.getElementById('streak-banner');
+        const countEl = document.getElementById('streak-count');
+        const startEl = document.getElementById('streak-start');
+
+        if (!banner || !countEl || !startEl) return;
+
+        if (count > 0) {
+            countEl.textContent = count;
+            banner.classList.remove('hidden');
+            startEl.classList.add('hidden');
+        } else {
+            banner.classList.add('hidden');
+            startEl.classList.remove('hidden');
         }
     }
 
