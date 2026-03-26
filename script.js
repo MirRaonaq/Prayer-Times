@@ -1815,7 +1815,7 @@ class PrayerTimesApp {
         document.body.style.overflow = '';
     }
 
-
+    openAuthModal(mode = 'login') {
         this.authModal.classList.add('show');
         this.switchAuthTab(mode);
         document.body.style.overflow = 'hidden';
