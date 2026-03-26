@@ -276,12 +276,17 @@
                     <button class="student-tab-btn active" data-student-tab="times">Today's Times</button>
                     <button class="student-tab-btn" data-student-tab="log">My Log</button>
                 </div>
-                <!-- My Log Tab (Phase 1: placeholder only) -->
+                <!-- My Log Tab -->
                 <div id="student-log-tab" class="student-tab-content hidden">
-                    <div class="log-placeholder">
-                        <i class="fas fa-clipboard-list"></i>
-                        <p>Your prayer log will appear here in the next update.</p>
+                    <div id="log-loading" class="log-loading hidden">
+                        <div class="loading-spinner"></div>
+                        <p>Loading your log...</p>
                     </div>
+                    <div id="log-prayer-list" class="log-prayer-list"></div>
+                    <p id="log-no-times" class="log-no-times hidden">
+                        <i class="fas fa-map-marker-alt"></i>
+                        Set your location to enable prayer check-in.
+                    </p>
                 </div>
             </div>
 

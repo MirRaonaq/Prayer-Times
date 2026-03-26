@@ -487,6 +487,142 @@ class PrayerTimesApp {
         return mapping[prayerName];
     }
 
+    getLogDateKey() {
+        return new Date().toLocaleDateString('en-CA');
+    }
+
+    getPrayerWindowStatus(prayerName) {
+        if (!this.prayerTimes) return 'no-times';
+        const prayerMinutes = this.getPrayerMinutes(prayerName);
+        if (prayerMinutes === null) return 'no-times';
+
+        const now = new Date();
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+        const prayerOrder = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+        const idx = prayerOrder.indexOf(prayerName);
+        if (idx === -1) return 'no-times';
+
+        let nextMinutes;
+        if (idx < prayerOrder.length - 1) {
+            nextMinutes = this.getPrayerMinutes(prayerOrder[idx + 1]);
+            if (nextMinutes === null) nextMinutes = 24 * 60;
+        } else {
+            nextMinutes = 24 * 60;
+        }
+
+        if (currentMinutes < prayerMinutes) return 'pending';
+        if (currentMinutes < nextMinutes) return 'ontime';
+        return 'late';
+    }
+
+    async loadPrayerLog() {
+        if (!this.currentUser) return;
+
+        const loadingEl = document.getElementById('log-loading');
+        const listEl = document.getElementById('log-prayer-list');
+        const noTimesEl = document.getElementById('log-no-times');
+
+        if (!listEl) return;
+
+        if (loadingEl) loadingEl.classList.remove('hidden');
+        listEl.innerHTML = '';
+        if (noTimesEl) noTimesEl.classList.add('hidden');
+
+        try {
+            const date = this.getLogDateKey();
+            const colRef = this.collection(this.firebaseDb, 'prayerLogs', this.currentUser.uid, date);
+            const snapshot = await this.getDocs(colRef);
+
+            const existingLogs = {};
+            snapshot.forEach(docSnap => {
+                existingLogs[docSnap.id] = docSnap.data();
+            });
+
+            if (loadingEl) loadingEl.classList.add('hidden');
+            this.renderPrayerLogRows(listEl, noTimesEl, existingLogs);
+        } catch (error) {
+            console.error('Error loading prayer log:', error);
+            if (loadingEl) loadingEl.classList.add('hidden');
+            if (listEl) listEl.innerHTML = '<p class="log-no-times">Error loading log. Please try again.</p>';
+        }
+    }
+
+    renderPrayerLogRows(listEl, noTimesEl, existingLogs) {
+        const prayerOrder = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+        const prayerLabels = {
+            fajr: 'Fajr', dhuhr: 'Dhuhr', asr: 'Asr', maghrib: 'Maghrib', isha: 'Isha'
+        };
+
+        if (!this.prayerTimes) {
+            if (noTimesEl) noTimesEl.classList.remove('hidden');
+            return;
+        }
+
+        prayerOrder.forEach(prayerName => {
+            const label = prayerLabels[prayerName];
+            const apiName = this.getPrayerApiName(prayerName);
+            const rawTime = this.prayerTimes[apiName];
+            const displayTime = rawTime ? this.formatTime(rawTime) : '--:--';
+            const logEntry = existingLogs[prayerName];
+            const windowStatus = this.getPrayerWindowStatus(prayerName);
+            const isDone = !!logEntry;
+            const isPending = !isDone && windowStatus === 'pending';
+
+            const row = document.createElement('div');
+            row.className = 'log-prayer-row' + (isDone ? ' done' : '') + (isPending ? ' pending' : '');
+            row.dataset.prayer = prayerName;
+
+            const checkIcon = isDone ? '<i class="fas fa-check"></i>' : '';
+            const statusBadge = isDone
+                ? `<span class="log-status-badge ${logEntry.status}">${logEntry.status === 'ontime' ? '✅ On Time' : '⏰ Late'}</span>`
+                : '';
+
+            row.innerHTML = `
+                <div class="log-prayer-checkbox">${checkIcon}</div>
+                <div class="log-prayer-info">
+                    <span class="log-prayer-name">${label}</span>
+                    <span class="log-prayer-time">${displayTime}</span>
+                </div>
+                ${statusBadge}
+            `;
+
+            if (!isDone && !isPending) {
+                row.addEventListener('click', () => this.handlePrayerCheck(prayerName, row));
+            }
+
+            listEl.appendChild(row);
+        });
+    }
+
+    async handlePrayerCheck(prayerName, rowEl) {
+        if (!this.currentUser || rowEl.classList.contains('done') || rowEl.classList.contains('pending')) return;
+
+        const status = this.getPrayerWindowStatus(prayerName);
+        if (status === 'pending' || status === 'no-times') return;
+
+        rowEl.classList.add('done');
+        const checkboxEl = rowEl.querySelector('.log-prayer-checkbox');
+        if (checkboxEl) checkboxEl.innerHTML = '<i class="fas fa-check"></i>';
+
+        try {
+            const date = this.getLogDateKey();
+            const prayerDocRef = this.doc(this.firebaseDb, 'prayerLogs', this.currentUser.uid, date, prayerName);
+            await this.setDoc(prayerDocRef, {
+                timestamp: this.serverTimestamp(),
+                status: status
+            });
+
+            const badge = document.createElement('span');
+            badge.className = `log-status-badge ${status}`;
+            badge.textContent = status === 'ontime' ? '✅ On Time' : '⏰ Late';
+            rowEl.appendChild(badge);
+        } catch (error) {
+            console.error('Error saving prayer check:', error);
+            rowEl.classList.remove('done');
+            if (checkboxEl) checkboxEl.innerHTML = '';
+        }
+    }
+
     async refreshPrayerTimes() {
         if (this.currentLocation) {
             await this.fetchPrayerTimes();
@@ -1118,7 +1254,7 @@ class PrayerTimesApp {
         
         // Import Firebase auth functions
         const { onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js');
-        const { doc, setDoc, getDoc, updateDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
+        const { doc, setDoc, getDoc, updateDoc, serverTimestamp, collection, getDocs } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
         
         this.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
         this.signInWithEmailAndPassword = signInWithEmailAndPassword;
@@ -1129,6 +1265,8 @@ class PrayerTimesApp {
         this.getDoc = getDoc;
         this.updateDoc = updateDoc;
         this.serverTimestamp = serverTimestamp;
+        this.collection = collection;
+        this.getDocs = getDocs;
         
         // Listen for auth state changes
         onAuthStateChanged(this.firebaseAuth, (user) => {
@@ -1230,6 +1368,7 @@ class PrayerTimesApp {
         if (tabName === 'log') {
             this.prayerContentArea.classList.add('hidden');
             if (logTab) logTab.classList.remove('hidden');
+            this.loadPrayerLog();
         } else {
             this.prayerContentArea.classList.remove('hidden');
             if (logTab) logTab.classList.add('hidden');

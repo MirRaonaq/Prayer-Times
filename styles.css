@@ -1749,3 +1749,142 @@ body {
 .teacher-dashboard-placeholder p {
     font-size: 0.95rem;
 }
+
+/* ===========================
+   My Log Tab — Prayer Rows
+   =========================== */
+.log-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 40px 20px;
+    color: var(--indigo);
+}
+
+.log-loading .loading-spinner {
+    width: 30px;
+    height: 30px;
+}
+
+.log-loading p {
+    font-size: 0.95rem;
+    color: var(--indigo);
+}
+
+.log-prayer-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 8px 0;
+}
+
+.log-prayer-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    background: white;
+    border-radius: 12px;
+    border: 2px solid rgba(0, 0, 0, 0.07);
+    transition: border-color 0.2s ease, background 0.2s ease;
+    cursor: pointer;
+    user-select: none;
+}
+
+.log-prayer-row:hover:not(.done):not(.pending) {
+    border-color: var(--teal);
+}
+
+.log-prayer-row.done {
+    background: rgba(215, 253, 240, 0.35);
+    border-color: rgba(19, 111, 99, 0.2);
+    cursor: default;
+}
+
+.log-prayer-row.pending {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.log-prayer-checkbox {
+    width: 22px;
+    height: 22px;
+    border: 2px solid rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+    background: white;
+    font-size: 0.85rem;
+}
+
+.log-prayer-row.done .log-prayer-checkbox {
+    background: var(--teal);
+    border-color: var(--teal);
+    color: white;
+}
+
+.log-prayer-row.pending .log-prayer-checkbox {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+.log-prayer-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.log-prayer-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--black);
+}
+
+.log-prayer-time {
+    font-size: 0.78rem;
+    color: rgba(25, 25, 25, 0.5);
+}
+
+.log-prayer-row.pending .log-prayer-time::after {
+    content: ' · Not yet';
+    color: rgba(25, 25, 25, 0.35);
+    font-style: italic;
+}
+
+.log-status-badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.log-status-badge.ontime {
+    background: rgba(19, 111, 99, 0.12);
+    color: var(--teal);
+}
+
+.log-status-badge.late {
+    background: rgba(227, 135, 158, 0.18);
+    color: #b85070;
+}
+
+.log-no-times {
+    text-align: center;
+    padding: 40px 20px;
+    color: rgba(25, 25, 25, 0.4);
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+.log-no-times i {
+    display: block;
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+}
