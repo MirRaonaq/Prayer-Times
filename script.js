@@ -2008,8 +2008,40 @@ class PrayerTimesApp {
             document.getElementById('account-last-login').textContent = userData.lastLogin ? 
                 userData.lastLogin.toDate().toLocaleString() : 'Never';
             document.getElementById('account-views').textContent = userData.viewCount || 0;
+
+            // Highlight current role
+            const currentRole = userData.role || this.userRole || 'student';
+            const studentBtn = document.getElementById('role-switch-student');
+            const teacherBtn = document.getElementById('role-switch-teacher');
+            if (studentBtn) studentBtn.classList.toggle('active', currentRole === 'student');
+            if (teacherBtn) teacherBtn.classList.toggle('active', currentRole === 'teacher');
+
+            // Wire role switch buttons
+            [studentBtn, teacherBtn].forEach(btn => {
+                if (!btn) return;
+                btn.onclick = () => this.switchUserRole(btn.dataset.role);
+            });
         } catch (error) {
             console.error('Error loading account info:', error);
+        }
+    }
+
+    async switchUserRole(newRole) {
+        if (!this.currentUser || newRole === this.userRole) return;
+        try {
+            const userDocRef = this.doc(this.firebaseDb, 'users', this.currentUser.uid);
+            await this.updateDoc(userDocRef, { role: newRole });
+            this.userRole = newRole;
+            // Update button states
+            const studentBtn = document.getElementById('role-switch-student');
+            const teacherBtn = document.getElementById('role-switch-teacher');
+            if (studentBtn) studentBtn.classList.toggle('active', newRole === 'student');
+            if (teacherBtn) teacherBtn.classList.toggle('active', newRole === 'teacher');
+            this.closeAccountModal();
+            this.renderRoleView(newRole);
+            this.showSuccessMessage(`Switched to ${newRole} view!`);
+        } catch (error) {
+            console.error('Error switching role:', error);
         }
     }
 

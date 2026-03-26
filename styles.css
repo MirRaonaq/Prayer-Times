@@ -1499,6 +1499,34 @@ body {
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
+.role-switcher {
+    display: flex;
+    gap: 8px;
+}
+
+.role-switch-btn {
+    padding: 6px 14px;
+    border: 2px solid var(--mint);
+    border-radius: 20px;
+    background: none;
+    color: rgba(25,25,25,0.5);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.role-switch-btn.active {
+    background: var(--teal);
+    border-color: var(--teal);
+    color: #fff;
+}
+
+.role-switch-btn:hover:not(.active) {
+    border-color: var(--teal);
+    color: var(--teal);
+}
+
 .account-detail:last-child {
     border-bottom: none;
 }
