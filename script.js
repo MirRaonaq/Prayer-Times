@@ -1512,11 +1512,12 @@ class PrayerTimesApp {
         this.firebaseDb = window.firebaseDb;
         
         // Import Firebase auth functions
-        const { onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js');
+        const { onAuthStateChanged, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, signOut, updateProfile } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js');
         const { doc, setDoc, getDoc, updateDoc, serverTimestamp, collection, getDocs, query, where, limit, deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
         
-        this.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
-        this.signInWithEmailAndPassword = signInWithEmailAndPassword;
+        this.sendSignInLinkToEmail = sendSignInLinkToEmail;
+        this.isSignInWithEmailLink = isSignInWithEmailLink;
+        this.signInWithEmailLink = signInWithEmailLink;
         this.signOut = signOut;
         this.updateProfile = updateProfile;
         this.doc = doc;
@@ -1535,6 +1536,11 @@ class PrayerTimesApp {
         onAuthStateChanged(this.firebaseAuth, (user) => {
             this.handleAuthStateChange(user);
         });
+
+        // Complete email link sign-in if URL contains a sign-in link
+        if (this.isSignInWithEmailLink(this.firebaseAuth, window.location.href)) {
+            this.completeEmailLinkSignIn();
+        }
     }
 
     async handleAuthStateChange(user) {
@@ -1566,18 +1572,41 @@ class PrayerTimesApp {
                     lastLogin: this.serverTimestamp()
                 });
             } else {
-                // Create user document if it doesn't exist
-                this.userRole = 'student';
+                // New user via email link — check localStorage for registration data
+                let username = this.currentUser.displayName || 'User';
+                let role = 'student';
+                try {
+                    const pendingRaw = localStorage.getItem('emailLinkPendingData');
+                    if (pendingRaw) {
+                        const pending = JSON.parse(pendingRaw);
+                        if (pending.username) username = pending.username;
+                        if (pending.role) role = pending.role;
+                    }
+                } catch (_) {}
+
+                this.userRole = role;
+
+                // Set displayName on Firebase Auth user
+                if (this.updateProfile && username !== 'User') {
+                    await this.updateProfile(this.currentUser, { displayName: username });
+                }
+
                 await this.setDoc(userDocRef, {
-                    username: this.currentUser.displayName || 'User',
+                    username,
                     email: this.currentUser.email,
-                    role: 'student',
+                    role,
                     createdAt: this.serverTimestamp(),
                     loginCount: 1,
                     viewCount: 1,
                     lastLogin: this.serverTimestamp()
                 });
+
+                // Clean up pending registration data
+                localStorage.removeItem('emailLinkPendingData');
             }
+
+            // Clean up sign-in email storage
+            localStorage.removeItem('emailLinkAddress');
         } catch (error) {
             console.error('Error loading user data:', error);
         }
@@ -1824,39 +1853,37 @@ class PrayerTimesApp {
 
     async handleLogin(e) {
         e.preventDefault();
-        const email = document.getElementById('login-username').value.trim(); // Using email as username
-        const password = document.getElementById('login-password').value;
+        const email = document.getElementById('login-username').value.trim();
 
-        if (!email || !password) {
-            this.showAuthError('Please fill in all fields');
+        if (!email) {
+            this.showAuthError('Please enter your email');
             return;
         }
 
+        const submitBtn = this.loginForm.querySelector('.auth-submit-btn');
+        if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Sending...'; }
+
         try {
-            await this.signInWithEmailAndPassword(this.firebaseAuth, email, password);
-            this.closeAuthModal();
-            this.showSuccessMessage('Login successful!');
+            const actionCodeSettings = {
+                url: window.location.origin + window.location.pathname,
+                handleCodeInApp: true
+            };
+            await this.sendSignInLinkToEmail(this.firebaseAuth, email, actionCodeSettings);
+            localStorage.setItem('emailLinkAddress', email);
+            localStorage.setItem('emailLinkPendingData', JSON.stringify({ mode: 'login' }));
+
+            // Show "link sent" message
+            const sentEl = document.getElementById('login-link-sent');
+            const sentEmailEl = document.getElementById('login-link-email');
+            if (sentEl) sentEl.classList.remove('hidden');
+            if (sentEmailEl) sentEmailEl.textContent = email;
+            if (submitBtn) submitBtn.classList.add('hidden');
         } catch (error) {
-            console.error('Login error:', error);
-            let errorMessage = 'Login failed';
-            
-            switch (error.code) {
-                case 'auth/user-not-found':
-                    errorMessage = 'No account found with this email';
-                    break;
-                case 'auth/wrong-password':
-                    errorMessage = 'Incorrect password';
-                    break;
-                case 'auth/invalid-email':
-                    errorMessage = 'Invalid email address';
-                    break;
-                case 'auth/too-many-requests':
-                    errorMessage = 'Too many failed attempts. Please try again later';
-                    break;
-                default:
-                    errorMessage = error.message;
-            }
-            
+            console.error('Send link error:', error);
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-envelope"></i> Send Login Link'; }
+            let errorMessage = 'Failed to send link';
+            if (error.code === 'auth/invalid-email') errorMessage = 'Invalid email address';
+            else if (error.code === 'auth/too-many-requests') errorMessage = 'Too many requests. Please wait a moment.';
             this.showAuthError(errorMessage);
         }
     }
@@ -1865,11 +1892,9 @@ class PrayerTimesApp {
         e.preventDefault();
         const username = document.getElementById('register-username').value.trim();
         const email = document.getElementById('register-email').value.trim();
-        const password = document.getElementById('register-password').value;
-        const confirmPassword = document.getElementById('register-password-confirm').value;
 
         // Validation
-        if (!username || !email || !password || !confirmPassword) {
+        if (!username || !email) {
             this.showAuthError('Please fill in all fields');
             return;
         }
@@ -1879,66 +1904,68 @@ class PrayerTimesApp {
             return;
         }
 
-        if (password.length < 6) {
-            this.showAuthError('Password must be at least 6 characters');
-            return;
-        }
-
-        if (password !== confirmPassword) {
-            this.showAuthError('Passwords do not match');
-            return;
-        }
-
         if (!this.selectedRole) {
             this.showAuthError('Please select your role (Teacher or Student)');
             if (this.roleError) this.roleError.classList.remove('hidden');
             return;
         }
 
-        try {
-            const userCredential = await this.createUserWithEmailAndPassword(this.firebaseAuth, email, password);
-            
-            // Update user profile with username
-            await this.updateProfile(userCredential.user, {
-                displayName: username
-            });
+        const submitBtn = this.registerForm.querySelector('.auth-submit-btn');
+        if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Sending...'; }
 
-            // Create user document in Firestore
-            await this.setDoc(this.doc(this.firebaseDb, 'users', userCredential.user.uid), {
-                username: username,
-                email: email,
-                role: this.selectedRole,
-                createdAt: this.serverTimestamp(),
-                loginCount: 1,
-                viewCount: 0,
-                lastLogin: this.serverTimestamp()
-            });
+        try {
+            const actionCodeSettings = {
+                url: window.location.origin + window.location.pathname,
+                handleCodeInApp: true
+            };
+            await this.sendSignInLinkToEmail(this.firebaseAuth, email, actionCodeSettings);
+            localStorage.setItem('emailLinkAddress', email);
+            localStorage.setItem('emailLinkPendingData', JSON.stringify({
+                mode: 'register',
+                username,
+                role: this.selectedRole
+            }));
+
+            // Show "link sent" message
+            const sentEl = document.getElementById('register-link-sent');
+            const sentEmailEl = document.getElementById('register-link-email');
+            if (sentEl) sentEl.classList.remove('hidden');
+            if (sentEmailEl) sentEmailEl.textContent = email;
+            if (submitBtn) submitBtn.classList.add('hidden');
 
             // Reset role selection state
             this.selectedRole = null;
             this.roleCards.forEach(c => c.classList.remove('selected'));
-
-            this.closeAuthModal();
-            this.showSuccessMessage('Account created successfully!');
         } catch (error) {
-            console.error('Registration error:', error);
-            let errorMessage = 'Registration failed';
-            
-            switch (error.code) {
-                case 'auth/email-already-in-use':
-                    errorMessage = 'Email already registered';
-                    break;
-                case 'auth/invalid-email':
-                    errorMessage = 'Invalid email address';
-                    break;
-                case 'auth/weak-password':
-                    errorMessage = 'Password is too weak';
-                    break;
-                default:
-                    errorMessage = error.message;
-            }
-            
+            console.error('Registration link error:', error);
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-envelope"></i> Create Account &amp; Send Link'; }
+            let errorMessage = 'Failed to send link';
+            if (error.code === 'auth/invalid-email') errorMessage = 'Invalid email address';
+            else if (error.code === 'auth/too-many-requests') errorMessage = 'Too many requests. Please wait a moment.';
             this.showAuthError(errorMessage);
+        }
+    }
+
+    async completeEmailLinkSignIn() {
+        let email = localStorage.getItem('emailLinkAddress');
+
+        if (!email) {
+            // Ask user for email if opened on different device
+            email = window.prompt('Please provide your email for confirmation:');
+            if (!email) return;
+        }
+
+        try {
+            await this.signInWithEmailLink(this.firebaseAuth, email, window.location.href);
+            // Clean up URL (remove oobCode etc.)
+            if (window.history && window.history.replaceState) {
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        } catch (error) {
+            console.error('Email link sign-in error:', error);
+            // Clean up invalid link data
+            localStorage.removeItem('emailLinkAddress');
+            localStorage.removeItem('emailLinkPendingData');
         }
     }
 

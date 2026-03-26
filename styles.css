@@ -1424,6 +1424,26 @@ body {
     box-shadow: 0 8px 25px rgba(19, 111, 99, 0.3);
 }
 
+.link-sent-msg {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px 16px;
+    background: #D7FDF0;
+    border: 1px solid #136F63;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    color: #136F63;
+    margin-top: 12px;
+    line-height: 1.5;
+}
+
+.link-sent-msg i {
+    font-size: 1.1rem;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
 .auth-error {
     display: flex;
     align-items: center;
