@@ -190,6 +190,18 @@ class PrayerTimesApp {
         this.studentTabBtns.forEach(btn => {
             btn.addEventListener('click', () => this.switchStudentTab(btn.dataset.studentTab));
         });
+
+        // Teacher roster search
+        const rosterSearchBtn = document.getElementById('roster-search-btn');
+        const rosterSearchInput = document.getElementById('roster-search-input');
+        if (rosterSearchBtn) {
+            rosterSearchBtn.addEventListener('click', () => this.searchStudentForRoster());
+        }
+        if (rosterSearchInput) {
+            rosterSearchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') this.searchStudentForRoster();
+            });
+        }
     }
 
     updateDateDisplay() {
@@ -688,6 +700,167 @@ class PrayerTimesApp {
         } else {
             banner.classList.add('hidden');
             startEl.classList.remove('hidden');
+        }
+    }
+
+    async loadTeacherRoster() {
+        if (!this.currentUser) return;
+
+        const loadingEl = document.getElementById('roster-loading');
+        const listEl = document.getElementById('roster-list');
+        const emptyEl = document.getElementById('roster-empty');
+
+        if (!listEl) return;
+
+        if (loadingEl) loadingEl.classList.remove('hidden');
+        listEl.innerHTML = '';
+        if (emptyEl) emptyEl.classList.add('hidden');
+
+        try {
+            const studentsRef = this.collection(this.firebaseDb, 'teacherRosters', this.currentUser.uid, 'students');
+            const snapshot = await this.getDocs(studentsRef);
+
+            if (loadingEl) loadingEl.classList.add('hidden');
+
+            if (snapshot.empty) {
+                if (emptyEl) emptyEl.classList.remove('hidden');
+                return;
+            }
+
+            const students = [];
+            snapshot.forEach(docSnap => {
+                students.push({ uid: docSnap.id, ...docSnap.data() });
+            });
+
+            this.renderRosterList(listEl, students);
+        } catch (error) {
+            console.error('Error loading roster:', error);
+            if (loadingEl) loadingEl.classList.add('hidden');
+        }
+    }
+
+    renderRosterList(listEl, students) {
+        listEl.innerHTML = '';
+        students.forEach(student => {
+            const row = document.createElement('div');
+            row.className = 'roster-student-row';
+            row.dataset.uid = student.uid;
+            row.innerHTML = `
+                <div class="roster-student-info">
+                    <span class="roster-student-name">${student.username || 'Unknown'}</span>
+                    <span class="roster-student-email">${student.email || ''}</span>
+                </div>
+                <button class="roster-remove-btn" data-uid="${student.uid}">Remove</button>
+            `;
+            row.querySelector('.roster-remove-btn').addEventListener('click', () =>
+                this.removeStudentFromRoster(student.uid, row)
+            );
+            listEl.appendChild(row);
+        });
+    }
+
+    async searchStudentForRoster() {
+        const input = document.getElementById('roster-search-input');
+        const resultEl = document.getElementById('roster-search-result');
+        if (!input || !resultEl) return;
+
+        const term = input.value.trim();
+        if (!term) return;
+
+        resultEl.className = 'roster-search-result';
+        resultEl.innerHTML = 'Searching...';
+        resultEl.classList.remove('hidden');
+
+        try {
+            const usersRef = this.collection(this.firebaseDb, 'users');
+
+            const [emailSnap, usernameSnap] = await Promise.all([
+                this.getDocs(this.query(usersRef, this.where('email', '==', term), this.limit(1))),
+                this.getDocs(this.query(usersRef, this.where('username', '==', term), this.limit(1)))
+            ]);
+
+            let foundDoc = null;
+            if (!emailSnap.empty) foundDoc = emailSnap.docs[0];
+            else if (!usernameSnap.empty) foundDoc = usernameSnap.docs[0];
+
+            if (!foundDoc) {
+                resultEl.className = 'roster-search-result error';
+                resultEl.textContent = 'No student found with that email or username.';
+                return;
+            }
+
+            const userData = foundDoc.data();
+            const foundUid = foundDoc.id;
+
+            if (userData.role !== 'student') {
+                resultEl.className = 'roster-search-result error';
+                resultEl.textContent = 'That account is a teacher, not a student.';
+                return;
+            }
+
+            const rosterDocRef = this.doc(this.firebaseDb, 'teacherRosters', this.currentUser.uid, 'students', foundUid);
+            const existing = await this.getDoc(rosterDocRef);
+            const alreadyAdded = existing.exists();
+
+            resultEl.className = 'roster-search-result found';
+            resultEl.innerHTML = `
+                <div class="roster-result-info">
+                    <span class="roster-result-name">${userData.username || 'Unknown'}</span>
+                    <span class="roster-result-email">${userData.email}</span>
+                </div>
+                <button class="roster-add-btn" ${alreadyAdded ? 'disabled' : ''} data-uid="${foundUid}">
+                    ${alreadyAdded ? 'Already Added' : 'Add to Roster'}
+                </button>
+            `;
+
+            if (!alreadyAdded) {
+                resultEl.querySelector('.roster-add-btn').addEventListener('click', () =>
+                    this.addStudentToRoster(foundUid, userData, resultEl)
+                );
+            }
+        } catch (error) {
+            console.error('Search error:', error);
+            resultEl.className = 'roster-search-result error';
+            resultEl.textContent = 'Search failed. Please try again.';
+        }
+    }
+
+    async addStudentToRoster(studentUid, userData, resultEl) {
+        const btn = resultEl ? resultEl.querySelector('.roster-add-btn') : null;
+        if (btn) { btn.disabled = true; btn.textContent = 'Adding...'; }
+
+        try {
+            const rosterDocRef = this.doc(this.firebaseDb, 'teacherRosters', this.currentUser.uid, 'students', studentUid);
+            await this.setDoc(rosterDocRef, {
+                username: userData.username || 'Unknown',
+                email: userData.email || '',
+                addedAt: this.serverTimestamp()
+            });
+
+            if (btn) btn.textContent = 'Added ✓';
+            await this.loadTeacherRoster();
+        } catch (error) {
+            console.error('Error adding student:', error);
+            if (btn) { btn.disabled = false; btn.textContent = 'Add to Roster'; }
+        }
+    }
+
+    async removeStudentFromRoster(studentUid, rowEl) {
+        if (rowEl) rowEl.style.opacity = '0.4';
+
+        try {
+            const rosterDocRef = this.doc(this.firebaseDb, 'teacherRosters', this.currentUser.uid, 'students', studentUid);
+            await this.deleteDoc(rosterDocRef);
+            if (rowEl) rowEl.remove();
+
+            const listEl = document.getElementById('roster-list');
+            const emptyEl = document.getElementById('roster-empty');
+            if (listEl && emptyEl && listEl.children.length === 0) {
+                emptyEl.classList.remove('hidden');
+            }
+        } catch (error) {
+            console.error('Error removing student:', error);
+            if (rowEl) rowEl.style.opacity = '1';
         }
     }
 
@@ -1322,7 +1495,7 @@ class PrayerTimesApp {
         
         // Import Firebase auth functions
         const { onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js');
-        const { doc, setDoc, getDoc, updateDoc, serverTimestamp, collection, getDocs } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
+        const { doc, setDoc, getDoc, updateDoc, serverTimestamp, collection, getDocs, query, where, limit, deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
         
         this.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
         this.signInWithEmailAndPassword = signInWithEmailAndPassword;
@@ -1335,6 +1508,10 @@ class PrayerTimesApp {
         this.serverTimestamp = serverTimestamp;
         this.collection = collection;
         this.getDocs = getDocs;
+        this.query = query;
+        this.where = where;
+        this.limit = limit;
+        this.deleteDoc = deleteDoc;
         
         // Listen for auth state changes
         onAuthStateChanged(this.firebaseAuth, (user) => {
@@ -1419,6 +1596,7 @@ class PrayerTimesApp {
             this.teacherShell.classList.remove('hidden');
             this.studentShell.classList.add('hidden');
             this.prayerContentArea.classList.add('hidden');
+            this.loadTeacherRoster();
         } else {
             this.studentShell.classList.remove('hidden');
             this.teacherShell.classList.add('hidden');

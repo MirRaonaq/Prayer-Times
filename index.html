@@ -403,10 +403,31 @@
 
             <!-- Teacher Shell: shown to logged-in teachers only -->
             <div id="teacher-shell" class="hidden">
-                <div class="teacher-dashboard-placeholder">
-                    <i class="fas fa-chalkboard-teacher"></i>
-                    <h2>Teacher Dashboard</h2>
-                    <p>Your student roster and prayer tracking will appear here.</p>
+                <!-- Student Search -->
+                <div class="roster-search-section">
+                    <h2 class="roster-section-title"><i class="fas fa-user-plus"></i> Add Student</h2>
+                    <div class="roster-search-row">
+                        <input type="text" id="roster-search-input" class="roster-search-input"
+                            placeholder="Student email or username...">
+                        <button id="roster-search-btn" class="roster-search-btn">
+                            <i class="fas fa-search"></i> Find
+                        </button>
+                    </div>
+                    <div id="roster-search-result" class="roster-search-result hidden"></div>
+                </div>
+
+                <!-- Roster List -->
+                <div class="roster-list-section">
+                    <h2 class="roster-section-title"><i class="fas fa-users"></i> My Class</h2>
+                    <div id="roster-loading" class="log-loading hidden">
+                        <div class="loading-spinner"></div>
+                        <p>Loading roster...</p>
+                    </div>
+                    <div id="roster-list" class="roster-list"></div>
+                    <p id="roster-empty" class="roster-empty hidden">
+                        <i class="fas fa-user-graduate"></i>
+                        No students added yet. Search for a student above to get started.
+                    </p>
                 </div>
             </div>
 

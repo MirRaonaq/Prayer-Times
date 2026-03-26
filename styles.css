@@ -1935,3 +1935,182 @@ body {
     color: rgba(25, 25, 25, 0.5);
     margin-bottom: 12px;
 }
+
+/* ===========================
+   Teacher Roster
+   =========================== */
+.roster-search-section,
+.roster-list-section {
+    margin-bottom: 28px;
+}
+
+.roster-section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--black);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.roster-section-title i {
+    color: var(--teal);
+}
+
+.roster-search-row {
+    display: flex;
+    gap: 8px;
+}
+
+.roster-search-input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 2px solid rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.roster-search-input:focus {
+    border-color: var(--teal);
+}
+
+.roster-search-btn {
+    padding: 10px 16px;
+    background: var(--teal);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.2s ease;
+}
+
+.roster-search-btn:hover {
+    opacity: 0.85;
+}
+
+.roster-search-result {
+    margin-top: 10px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 0.88rem;
+}
+
+.roster-search-result.found {
+    background: rgba(215, 253, 240, 0.5);
+    border: 1.5px solid rgba(19, 111, 99, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.roster-search-result.error {
+    background: rgba(227, 135, 158, 0.15);
+    border: 1.5px solid rgba(227, 135, 158, 0.3);
+    color: #a04060;
+}
+
+.roster-result-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.roster-result-name {
+    font-weight: 600;
+    color: var(--black);
+}
+
+.roster-result-email {
+    font-size: 0.78rem;
+    color: rgba(25, 25, 25, 0.5);
+}
+
+.roster-add-btn {
+    padding: 6px 14px;
+    background: var(--teal);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.roster-add-btn:disabled {
+    background: rgba(0, 0, 0, 0.15);
+    cursor: default;
+}
+
+.roster-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.roster-student-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 14px;
+    background: white;
+    border-radius: 10px;
+    border: 1.5px solid rgba(0, 0, 0, 0.07);
+    transition: opacity 0.2s ease;
+}
+
+.roster-student-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.roster-student-name {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--black);
+}
+
+.roster-student-email {
+    font-size: 0.75rem;
+    color: rgba(25, 25, 25, 0.45);
+}
+
+.roster-remove-btn {
+    background: none;
+    border: 1.5px solid rgba(227, 135, 158, 0.5);
+    color: #b85070;
+    border-radius: 8px;
+    padding: 4px 10px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+}
+
+.roster-remove-btn:hover {
+    background: rgba(227, 135, 158, 0.12);
+}
+
+.roster-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: rgba(25, 25, 25, 0.4);
+    font-size: 0.88rem;
+    line-height: 1.8;
+}
+
+.roster-empty i {
+    display: block;
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
