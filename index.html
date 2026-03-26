@@ -403,32 +403,75 @@
 
             <!-- Teacher Shell: shown to logged-in teachers only -->
             <div id="teacher-shell" class="hidden">
-                <!-- Student Search -->
-                <div class="roster-search-section">
-                    <h2 class="roster-section-title"><i class="fas fa-user-plus"></i> Add Student</h2>
-                    <div class="roster-search-row">
-                        <input type="text" id="roster-search-input" class="roster-search-input"
-                            placeholder="Student email or username...">
-                        <button id="roster-search-btn" class="roster-search-btn">
-                            <i class="fas fa-search"></i> Find
-                        </button>
-                    </div>
-                    <div id="roster-search-result" class="roster-search-result hidden"></div>
+
+                <!-- Teacher Tab Bar -->
+                <div class="teacher-tabs">
+                    <button class="teacher-tab-btn active" data-teacher-tab="roster">
+                        <i class="fas fa-users"></i> My Class
+                    </button>
+                    <button class="teacher-tab-btn" data-teacher-tab="dashboard">
+                        <i class="fas fa-chart-bar"></i> Dashboard
+                    </button>
                 </div>
 
-                <!-- Roster List -->
-                <div class="roster-list-section">
-                    <h2 class="roster-section-title"><i class="fas fa-users"></i> My Class</h2>
-                    <div id="roster-loading" class="log-loading hidden">
-                        <div class="loading-spinner"></div>
-                        <p>Loading roster...</p>
+                <!-- My Class View -->
+                <div id="teacher-roster-view">
+                    <!-- Student Search -->
+                    <div class="roster-search-section">
+                        <h2 class="roster-section-title"><i class="fas fa-user-plus"></i> Add Student</h2>
+                        <div class="roster-search-row">
+                            <input type="text" id="roster-search-input" class="roster-search-input"
+                                placeholder="Student email or username...">
+                            <button id="roster-search-btn" class="roster-search-btn">
+                                <i class="fas fa-search"></i> Find
+                            </button>
+                        </div>
+                        <div id="roster-search-result" class="roster-search-result hidden"></div>
                     </div>
-                    <div id="roster-list" class="roster-list"></div>
-                    <p id="roster-empty" class="roster-empty hidden">
+
+                    <!-- Roster List -->
+                    <div class="roster-list-section">
+                        <h2 class="roster-section-title"><i class="fas fa-users"></i> My Class</h2>
+                        <div id="roster-loading" class="log-loading hidden">
+                            <div class="loading-spinner"></div>
+                            <p>Loading roster...</p>
+                        </div>
+                        <div id="roster-list" class="roster-list"></div>
+                        <p id="roster-empty" class="roster-empty hidden">
+                            <i class="fas fa-user-graduate"></i>
+                            No students added yet. Search for a student above to get started.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Dashboard View -->
+                <div id="teacher-dashboard-view" class="hidden">
+                    <div id="dashboard-loading" class="log-loading hidden">
+                        <div class="loading-spinner"></div>
+                        <p>Loading dashboard...</p>
+                    </div>
+                    <div id="dashboard-grid" class="dashboard-grid"></div>
+                    <p id="dashboard-empty" class="roster-empty hidden">
                         <i class="fas fa-user-graduate"></i>
-                        No students added yet. Search for a student above to get started.
+                        No students in your roster yet. Add students in "My Class" first.
                     </p>
                 </div>
+
+                <!-- Student Detail Slide-In Panel -->
+                <div id="teacher-detail-panel" class="teacher-detail-panel hidden">
+                    <div class="detail-panel-header">
+                        <div>
+                            <h3 id="detail-student-name" class="detail-student-name"></h3>
+                            <p id="detail-student-email" class="detail-student-email"></p>
+                        </div>
+                        <button id="detail-close-btn" class="detail-close-btn">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div id="detail-prayer-list" class="detail-prayer-list"></div>
+                </div>
+                <div id="detail-overlay" class="detail-overlay hidden"></div>
+
             </div>
 
         </main>

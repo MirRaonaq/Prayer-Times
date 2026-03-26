@@ -95,6 +95,13 @@ class PrayerTimesApp {
         // Student tab bar
         this.studentTabBtns = document.querySelectorAll('.student-tab-btn');
 
+        // Teacher tab bar + views
+        this.teacherTabBtns = document.querySelectorAll('.teacher-tab-btn');
+        this.teacherRosterView = document.getElementById('teacher-roster-view');
+        this.teacherDashboardView = document.getElementById('teacher-dashboard-view');
+        this.teacherDetailPanel = document.getElementById('teacher-detail-panel');
+        this.detailOverlay = document.getElementById('detail-overlay');
+
         // Register role cards
         this.roleCards = document.querySelectorAll('.role-card');
         this.roleError = document.getElementById('role-error');
@@ -190,6 +197,17 @@ class PrayerTimesApp {
         this.studentTabBtns.forEach(btn => {
             btn.addEventListener('click', () => this.switchStudentTab(btn.dataset.studentTab));
         });
+
+        // Teacher tab switching
+        this.teacherTabBtns.forEach(btn => {
+            btn.addEventListener('click', () => this.switchTeacherTab(btn.dataset.teacherTab));
+        });
+
+        // Detail panel close
+        const detailCloseBtn = document.getElementById('detail-close-btn');
+        if (detailCloseBtn) detailCloseBtn.addEventListener('click', () => this.closeDetailPanel());
+        const detailOverlay = document.getElementById('detail-overlay');
+        if (detailOverlay) detailOverlay.addEventListener('click', () => this.closeDetailPanel());
 
         // Teacher roster search
         const rosterSearchBtn = document.getElementById('roster-search-btn');
@@ -1596,7 +1614,7 @@ class PrayerTimesApp {
             this.teacherShell.classList.remove('hidden');
             this.studentShell.classList.add('hidden');
             this.prayerContentArea.classList.add('hidden');
-            this.loadTeacherRoster();
+            this.switchTeacherTab('roster');
         } else {
             this.studentShell.classList.remove('hidden');
             this.teacherShell.classList.add('hidden');
@@ -1621,7 +1639,154 @@ class PrayerTimesApp {
         }
     }
 
-    openAuthModal(mode = 'login') {
+    switchTeacherTab(tabName) {
+        this.teacherTabBtns.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.teacherTab === tabName);
+        });
+        if (tabName === 'dashboard') {
+            if (this.teacherRosterView) this.teacherRosterView.classList.add('hidden');
+            if (this.teacherDashboardView) this.teacherDashboardView.classList.remove('hidden');
+            this.loadTeacherDashboard();
+        } else {
+            if (this.teacherRosterView) this.teacherRosterView.classList.remove('hidden');
+            if (this.teacherDashboardView) this.teacherDashboardView.classList.add('hidden');
+            this.loadTeacherRoster();
+        }
+    }
+
+    async loadTeacherDashboard() {
+        if (!this.currentUser) return;
+        const loadingEl = document.getElementById('dashboard-loading');
+        const gridEl = document.getElementById('dashboard-grid');
+        const emptyEl = document.getElementById('dashboard-empty');
+        if (!gridEl) return;
+
+        if (loadingEl) loadingEl.classList.remove('hidden');
+        gridEl.innerHTML = '';
+        if (emptyEl) emptyEl.classList.add('hidden');
+
+        try {
+            const studentsRef = this.collection(this.firebaseDb, 'teacherRosters', this.currentUser.uid, 'students');
+            const rosterSnap = await this.getDocs(studentsRef);
+
+            if (loadingEl) loadingEl.classList.add('hidden');
+
+            if (rosterSnap.empty) {
+                if (emptyEl) emptyEl.classList.remove('hidden');
+                return;
+            }
+
+            const students = [];
+            rosterSnap.forEach(d => students.push({ uid: d.id, ...d.data() }));
+
+            const dateKey = this.getLogDateKey();
+            const logFetches = students.map(s =>
+                this.getDocs(this.collection(this.firebaseDb, 'prayerLogs', s.uid, dateKey))
+                    .then(snap => {
+                        const logs = {};
+                        snap.forEach(d => { logs[d.id] = d.data(); });
+                        return { uid: s.uid, logs };
+                    })
+            );
+
+            const results = await Promise.all(logFetches);
+            const logsMap = {};
+            results.forEach(r => { logsMap[r.uid] = r.logs; });
+
+            this.renderDashboardGrid(gridEl, students, logsMap);
+        } catch (error) {
+            console.error('Error loading dashboard:', error);
+            if (loadingEl) loadingEl.classList.add('hidden');
+            if (gridEl) gridEl.innerHTML = '<p class="log-no-times">Error loading dashboard. Please try again.</p>';
+        }
+    }
+
+    renderDashboardGrid(gridEl, students, logsMap) {
+        const prayerKeys = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+        const prayerLabels = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+
+        gridEl.innerHTML = '';
+
+        const header = document.createElement('div');
+        header.className = 'dashboard-header-row';
+        header.innerHTML = '<span></span>' + prayerLabels.map(p => `<span>${p}</span>`).join('');
+        gridEl.appendChild(header);
+
+        students.forEach(student => {
+            const logs = logsMap[student.uid] || {};
+            const row = document.createElement('div');
+            row.className = 'dashboard-student-row';
+            row.dataset.uid = student.uid;
+
+            const nameCell = `<span class="dashboard-student-label">${student.username || student.email || 'Student'}</span>`;
+            const prayerCells = prayerKeys.map(key => {
+                const capitalized = key.charAt(0).toUpperCase() + key.slice(1);
+                const log = logs[key] || logs[capitalized];
+                if (!log) return `<span class="dashboard-cell missing" title="Not logged">✗</span>`;
+                if (log.status === 'ontime') return `<span class="dashboard-cell ontime" title="On time">✓</span>`;
+                return `<span class="dashboard-cell late" title="Late">⚠</span>`;
+            });
+
+            row.innerHTML = nameCell + prayerCells.join('');
+            row.addEventListener('click', () => this.openStudentDetailPanel(student.uid, student, logs));
+            gridEl.appendChild(row);
+        });
+    }
+
+    openStudentDetailPanel(uid, student, logs) {
+        const nameEl = document.getElementById('detail-student-name');
+        const emailEl = document.getElementById('detail-student-email');
+        const listEl = document.getElementById('detail-prayer-list');
+        if (!nameEl || !listEl) return;
+
+        nameEl.textContent = student.username || 'Student';
+        if (emailEl) emailEl.textContent = student.email || '';
+
+        const prayerKeys = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+        const prayerLabelMap = { fajr: 'Fajr', dhuhr: 'Dhuhr', asr: 'Asr', maghrib: 'Maghrib', isha: 'Isha' };
+
+        listEl.innerHTML = prayerKeys.map(key => {
+            const label = prayerLabelMap[key];
+            const log = logs[key] || logs[label];
+            if (!log) {
+                return `<div class="detail-prayer-row">
+                    <span class="detail-prayer-name">${label}</span>
+                    <span class="detail-prayer-time" style="color:#bbb">Not logged</span>
+                </div>`;
+            }
+            const ts = log.timestamp?.toDate ? log.timestamp.toDate() : new Date(log.timestamp);
+            const timeStr = ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const badge = log.status === 'ontime'
+                ? `<span class="log-status-badge ontime">On time</span>`
+                : `<span class="log-status-badge late">Late</span>`;
+            return `<div class="detail-prayer-row">
+                <span class="detail-prayer-name">${label}</span>
+                <span class="detail-prayer-time">${timeStr} ${badge}</span>
+            </div>`;
+        }).join('');
+
+        if (this.teacherDetailPanel) {
+            this.teacherDetailPanel.classList.remove('hidden');
+            requestAnimationFrame(() => this.teacherDetailPanel.classList.add('open'));
+        }
+        if (this.detailOverlay) this.detailOverlay.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    closeDetailPanel() {
+        if (this.teacherDetailPanel) {
+            this.teacherDetailPanel.classList.remove('open');
+            setTimeout(() => {
+                if (!this.teacherDetailPanel.classList.contains('open')) {
+                    this.teacherDetailPanel.classList.add('hidden');
+                }
+            }, 300);
+        }
+        if (this.detailOverlay) this.detailOverlay.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+
+
         this.authModal.classList.add('show');
         this.switchAuthTab(mode);
         document.body.style.overflow = 'hidden';
