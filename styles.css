@@ -37,17 +37,20 @@ body {
 /* Header Styles */
 .header {
     text-align: center;
-    margin-bottom: 40px;
-    padding: 20px 0;
+    margin-bottom: 15px;
+    padding: 5px 0;
 }
 
 .header-content {
     background: rgba(255, 255, 255, 0.95);
-    padding: 30px;
-    border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    gap: 15px;
 }
 
 /* Logo Styles */
@@ -55,22 +58,21 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 15px;
+    flex-shrink: 0;
 }
 
 .logo {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 90px;
-    height: 90px;
+    width: 50px;
+    height: 50px;
     background: linear-gradient(135deg, var(--mint) 0%, #FFE5B4 50%, #FFF8DC 100%);
     border-radius: 50%;
-    margin-bottom: 15px;
     position: relative;
-    box-shadow: 0 8px 25px rgba(19, 111, 99, 0.2);
+    box-shadow: 0 3px 10px rgba(19, 111, 99, 0.15);
     transition: all 0.3s ease;
-    border: 3px solid rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.8);
 }
 
 .logo:hover {
@@ -82,71 +84,76 @@ body {
 .logo::before {
     content: '';
     position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 20px;
-    height: 20px;
+    top: 5px;
+    right: 5px;
+    width: 12px;
+    height: 12px;
     background: linear-gradient(45deg, #FFD700, #FFA500);
     border-radius: 50%;
-    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    box-shadow: 0 0 6px rgba(255, 215, 0, 0.4);
 }
 
 /* Sun rays */
 .logo::after {
     content: '';
     position: absolute;
-    top: 6px;
-    right: 6px;
-    width: 24px;
-    height: 24px;
+    top: 4px;
+    right: 4px;
+    width: 14px;
+    height: 14px;
     background: transparent;
     border-radius: 50%;
-    border: 2px solid transparent;
+    border: 1px solid transparent;
     background-image: 
-        radial-gradient(circle at 50% 0%, #FFD700 1px, transparent 1px),
-        radial-gradient(circle at 100% 50%, #FFD700 1px, transparent 1px),
-        radial-gradient(circle at 50% 100%, #FFD700 1px, transparent 1px),
-        radial-gradient(circle at 0% 50%, #FFD700 1px, transparent 1px);
+        radial-gradient(circle at 50% 0%, #FFD700 0.5px, transparent 0.5px),
+        radial-gradient(circle at 100% 50%, #FFD700 0.5px, transparent 0.5px),
+        radial-gradient(circle at 50% 100%, #FFD700 0.5px, transparent 0.5px),
+        radial-gradient(circle at 0% 50%, #FFD700 0.5px, transparent 0.5px);
+}
 }
 
 .logo-icon {
-    font-size: 2.2rem;
+    font-size: 1.5rem;
     background: linear-gradient(45deg, var(--rose), var(--indigo));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
     z-index: 2;
     position: relative;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
 }
 
 .logo-image {
-    width: 60px;
-    height: 60px;
+    width: 30px;
+    height: 30px;
     object-fit: contain;
     z-index: 2;
     position: relative;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
 }
 
 .title {
-    font-size: 2.5rem;
+    font-size: 1.5rem;
     font-weight: 700;
     color: var(--teal);
-    margin-bottom: 10px;
+    margin-bottom: 2px;
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 15px;
+    gap: 8px;
 }
 
 .title i {
     color: var(--indigo);
-    font-size: 2.2rem;
+    font-size: 1.3rem;
+}
+
+.title-content {
+    flex: 1;
+    text-align: left;
 }
 
 .subtitle {
-    font-size: 1.1rem;
+    font-size: 0.85rem;
     color: var(--indigo);
     font-weight: 400;
 }
@@ -1259,4 +1266,486 @@ body {
         max-width: 200px;
         justify-content: center;
     }
-} 
+}
+
+/* ===============================
+   Authentication Styles
+   =============================== */
+
+.user-section {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.auth-section {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.auth-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 20px;
+    background: var(--teal);
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.auth-btn:hover {
+    background: var(--indigo);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(107, 92, 165, 0.3);
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--teal);
+    font-weight: 600;
+    margin-right: 10px;
+}
+
+.user-info i {
+    font-size: 1.2rem;
+}
+
+.user-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* Auth Modal Styles */
+.auth-modal-content {
+    width: 95%;
+    max-width: 450px;
+}
+
+.auth-tabs {
+    display: flex;
+    border-bottom: 2px solid #f0f0f0;
+    margin-bottom: 30px;
+}
+
+.auth-tab-btn {
+    flex: 1;
+    padding: 15px 20px;
+    border: none;
+    background: none;
+    color: #666;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-bottom: 3px solid transparent;
+}
+
+.auth-tab-btn.active {
+    color: var(--teal);
+    border-bottom-color: var(--teal);
+}
+
+.auth-tab-btn:hover {
+    background: rgba(19, 111, 99, 0.05);
+}
+
+.auth-tab-content {
+    display: none;
+}
+
+.auth-tab-content.active {
+    display: block;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.auth-form .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.auth-form label {
+    font-weight: 600;
+    color: var(--black);
+    font-size: 0.95rem;
+}
+
+.auth-form input {
+    padding: 12px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.auth-form input:focus {
+    outline: none;
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(19, 111, 99, 0.1);
+}
+
+.auth-submit-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 15px 30px;
+    border: none;
+    border-radius: 15px;
+    background: linear-gradient(135deg, var(--teal) 0%, var(--indigo) 100%);
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+}
+
+.auth-submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(19, 111, 99, 0.3);
+}
+
+.auth-error {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: #fee;
+    color: #c53030;
+    border: 1px solid #feb2b2;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+    animation: slideIn 0.3s ease;
+}
+
+/* Account Modal Styles */
+.account-modal-content {
+    width: 95%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.account-info {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.account-section {
+    background: rgba(255, 255, 255, 0.7);
+    padding: 25px;
+    border-radius: 15px;
+    border: 1px solid rgba(19, 111, 99, 0.1);
+}
+
+.account-section h4 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--teal);
+    margin-bottom: 20px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    border-bottom: 2px solid rgba(19, 111, 99, 0.1);
+    padding-bottom: 10px;
+}
+
+.account-detail {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.account-detail:last-child {
+    border-bottom: none;
+}
+
+.account-detail .label {
+    font-weight: 600;
+    color: var(--black);
+}
+
+.account-detail span:last-child {
+    color: var(--teal);
+    font-weight: 500;
+}
+
+.account-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.account-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px 20px;
+    border: none;
+    border-radius: 12px;
+    background: var(--teal);
+    color: white;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.account-action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(19, 111, 99, 0.3);
+}
+
+.account-action-btn.danger {
+    background: var(--rose);
+}
+
+.account-action-btn.danger:hover {
+    box-shadow: 0 4px 15px rgba(227, 135, 158, 0.3);
+}
+
+/* Success Notification */
+.success-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px 25px;
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(72, 187, 120, 0.3);
+    font-weight: 600;
+    z-index: 10000;
+    transform: translateX(400px);
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.success-notification.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.success-notification i {
+    font-size: 1.2rem;
+}
+
+/* Animation Keyframes */
+@keyframes slideIn {
+    from {
+        transform: translateY(-10px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Mobile Responsive Design for Auth */
+@media (max-width: 768px) {
+    .user-section {
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+        margin-top: 15px;
+    }
+    
+    .auth-section {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .auth-btn {
+        font-size: 0.85rem;
+        padding: 8px 14px;
+    }
+    
+    .user-info {
+        margin-right: 0;
+        margin-bottom: 10px;
+    }
+    
+    .auth-modal-content {
+        margin: 10px;
+        width: calc(100% - 20px);
+    }
+    
+    .account-modal-content {
+        margin: 10px;
+        width: calc(100% - 20px);
+        max-height: calc(100vh - 40px);
+    }
+    
+    .account-detail {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+        padding: 15px 0;
+    }
+    
+    .success-notification {
+        right: 10px;
+        left: 10px;
+        top: 10px;
+        transform: translateY(-100px);
+    }
+    
+    .success-notification.show {
+        transform: translateY(0);
+    }
+}
+
+/* ===========================
+   Role Selection Cards
+   =========================== */
+.role-cards {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.role-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 12px;
+    border: 2px solid rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.2s ease, background 0.2s ease;
+    background: white;
+    user-select: none;
+}
+
+.role-card:hover {
+    border-color: var(--teal);
+}
+
+.role-card.selected {
+    border-color: var(--teal);
+    background: rgba(215, 253, 240, 0.45);
+}
+
+.role-card-icon {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.role-card-label {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--black);
+}
+
+.field-error {
+    color: #e53e3e;
+    font-size: 0.82rem;
+    margin-top: 4px;
+}
+
+/* ===========================
+   Student Tab Bar
+   =========================== */
+.student-tab-bar {
+    display: flex;
+    gap: 4px;
+    padding: 0 0 16px 0;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.08);
+    margin-bottom: 20px;
+}
+
+.student-tab-btn {
+    padding: 8px 20px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    color: rgba(25, 25, 25, 0.55);
+    transition: all 0.2s ease;
+}
+
+.student-tab-btn:hover {
+    color: var(--teal);
+    background: rgba(19, 111, 99, 0.06);
+}
+
+.student-tab-btn.active {
+    background: var(--teal);
+    color: white;
+}
+
+.log-placeholder {
+    text-align: center;
+    padding: 60px 20px;
+    color: rgba(25, 25, 25, 0.4);
+}
+
+.log-placeholder i {
+    font-size: 3rem;
+    margin-bottom: 12px;
+    display: block;
+}
+
+.log-placeholder p {
+    font-size: 1rem;
+}
+
+/* ===========================
+   Teacher Dashboard Shell
+   =========================== */
+.teacher-dashboard-placeholder {
+    text-align: center;
+    padding: 80px 20px;
+    color: rgba(25, 25, 25, 0.45);
+}
+
+.teacher-dashboard-placeholder i {
+    font-size: 3.5rem;
+    margin-bottom: 16px;
+    display: block;
+    color: var(--teal);
+    opacity: 0.6;
+}
+
+.teacher-dashboard-placeholder h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--black);
+}
+
+.teacher-dashboard-placeholder p {
+    font-size: 0.95rem;
+}

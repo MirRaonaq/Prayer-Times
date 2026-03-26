@@ -12,8 +12,17 @@ class PrayerTimesApp {
         this.cacheExpiry = 300000; // 5 minutes cache
         this.maxCacheSize = 5;
         
+        // Authentication properties
+        this.currentUser = null;
+        this.isLoggedIn = false;
+        this.firebaseAuth = null;
+        this.firebaseDb = null;
+        this.userRole = null;
+        this.selectedRole = null;
+        
         this.initializeElements();
         this.bindEvents();
+        this.initializeFirebase();
         this.updateDateDisplay();
         this.getUserLocation();
         this.fetchRandomQuote(); // Load initial quote
@@ -56,6 +65,39 @@ class PrayerTimesApp {
         this.verseContent = document.getElementById('verse-content');
         this.newVerseBtn = document.getElementById('new-verse-btn');
         this.verseExplanationBtn = document.getElementById('verse-explanation-btn');
+        
+        // Authentication elements
+        this.loggedOutSection = document.getElementById('logged-out-section');
+        this.loggedInSection = document.getElementById('logged-in-section');
+        this.loginBtn = document.getElementById('login-btn');
+        this.registerBtn = document.getElementById('register-btn');
+        this.accountBtn = document.getElementById('account-btn');
+        this.logoutBtn = document.getElementById('logout-btn');
+        this.usernameDisplay = document.getElementById('username-display');
+        
+        // Auth modal elements
+        this.authModal = document.getElementById('auth-modal');
+        this.closeAuthModalBtn = document.getElementById('close-auth-modal');
+        this.authModalTitle = document.getElementById('auth-modal-title');
+        this.authTabBtns = document.querySelectorAll('.auth-tab-btn');
+        this.loginForm = document.getElementById('login-form');
+        this.registerForm = document.getElementById('register-form');
+        
+        // Account modal elements
+        this.accountModal = document.getElementById('account-modal');
+        this.closeAccountModalBtn = document.getElementById('close-account-modal');
+
+        // Role view shells
+        this.studentShell = document.getElementById('student-shell');
+        this.teacherShell = document.getElementById('teacher-shell');
+        this.prayerContentArea = document.getElementById('prayer-content-area');
+
+        // Student tab bar
+        this.studentTabBtns = document.querySelectorAll('.student-tab-btn');
+
+        // Register role cards
+        this.roleCards = document.querySelectorAll('.role-card');
+        this.roleError = document.getElementById('role-error');
     }
 
     bindEvents() {
@@ -102,6 +144,52 @@ class PrayerTimesApp {
         // Quote events
         this.newVerseBtn.addEventListener('click', () => this.fetchRandomQuote());
         this.verseExplanationBtn.addEventListener('click', () => this.toggleQuoteExplanation());
+        
+        // Authentication events
+        this.loginBtn.addEventListener('click', () => this.openAuthModal('login'));
+        this.registerBtn.addEventListener('click', () => this.openAuthModal('register'));
+        this.accountBtn.addEventListener('click', () => this.openAccountModal());
+        this.logoutBtn.addEventListener('click', () => this.logout());
+        
+        // Auth modal events
+        this.closeAuthModalBtn.addEventListener('click', () => this.closeAuthModal());
+        this.authModal.addEventListener('click', (e) => {
+            if (e.target === this.authModal) {
+                this.closeAuthModal();
+            }
+        });
+        
+        // Auth tab switching
+        this.authTabBtns.forEach(btn => {
+            btn.addEventListener('click', () => this.switchAuthTab(btn.dataset.authTab));
+        });
+        
+        // Auth form submissions
+        this.loginForm.addEventListener('submit', (e) => this.handleLogin(e));
+        this.registerForm.addEventListener('submit', (e) => this.handleRegister(e));
+        
+        // Account modal events
+        this.closeAccountModalBtn.addEventListener('click', () => this.closeAccountModal());
+        this.accountModal.addEventListener('click', (e) => {
+            if (e.target === this.accountModal) {
+                this.closeAccountModal();
+            }
+        });
+
+        // Role card selection in register form
+        this.roleCards.forEach(card => {
+            card.addEventListener('click', () => {
+                this.roleCards.forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                this.selectedRole = card.dataset.role;
+                if (this.roleError) this.roleError.classList.add('hidden');
+            });
+        });
+
+        // Student tab switching
+        this.studentTabBtns.forEach(btn => {
+            btn.addEventListener('click', () => this.switchStudentTab(btn.dataset.studentTab));
+        });
     }
 
     updateDateDisplay() {
@@ -1002,6 +1090,399 @@ class PrayerTimesApp {
             </div>
         `;
         this.verseExplanationBtn.classList.add('hidden');
+    }
+
+    // ===============================
+    // Authentication Methods
+    // ===============================
+
+    async initializeFirebase() {
+        // Wait for Firebase to be loaded
+        const waitForFirebase = () => {
+            return new Promise((resolve) => {
+                const checkFirebase = () => {
+                    if (window.firebaseAuth && window.firebaseDb) {
+                        resolve();
+                    } else {
+                        setTimeout(checkFirebase, 100);
+                    }
+                };
+                checkFirebase();
+            });
+        };
+
+        await waitForFirebase();
+        
+        this.firebaseAuth = window.firebaseAuth;
+        this.firebaseDb = window.firebaseDb;
+        
+        // Import Firebase auth functions
+        const { onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js');
+        const { doc, setDoc, getDoc, updateDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
+        
+        this.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+        this.signInWithEmailAndPassword = signInWithEmailAndPassword;
+        this.signOut = signOut;
+        this.updateProfile = updateProfile;
+        this.doc = doc;
+        this.setDoc = setDoc;
+        this.getDoc = getDoc;
+        this.updateDoc = updateDoc;
+        this.serverTimestamp = serverTimestamp;
+        
+        // Listen for auth state changes
+        onAuthStateChanged(this.firebaseAuth, (user) => {
+            this.handleAuthStateChange(user);
+        });
+    }
+
+    async handleAuthStateChange(user) {
+        if (user) {
+            this.currentUser = user;
+            this.isLoggedIn = true;
+            await this.loadUserData();
+        } else {
+            this.currentUser = null;
+            this.isLoggedIn = false;
+            this.userRole = null;
+        }
+        this.updateAuthUI();
+    }
+
+    async loadUserData() {
+        if (!this.currentUser) return;
+        
+        try {
+            const userDocRef = this.doc(this.firebaseDb, 'users', this.currentUser.uid);
+            const userDoc = await this.getDoc(userDocRef);
+            
+            if (userDoc.exists()) {
+                const userData = userDoc.data();
+                this.userRole = userData.role || 'student';
+                await this.updateDoc(userDocRef, {
+                    viewCount: (userData.viewCount || 0) + 1,
+                    loginCount: (userData.loginCount || 0) + 1,
+                    lastLogin: this.serverTimestamp()
+                });
+            } else {
+                // Create user document if it doesn't exist
+                this.userRole = 'student';
+                await this.setDoc(userDocRef, {
+                    username: this.currentUser.displayName || 'User',
+                    email: this.currentUser.email,
+                    role: 'student',
+                    createdAt: this.serverTimestamp(),
+                    loginCount: 1,
+                    viewCount: 1,
+                    lastLogin: this.serverTimestamp()
+                });
+            }
+        } catch (error) {
+            console.error('Error loading user data:', error);
+        }
+    }
+
+    checkAuthState() {
+        // This is now handled by onAuthStateChanged in initializeFirebase
+        // Keeping this method for compatibility but it's no longer used
+    }
+
+    updateAuthUI() {
+        if (this.isLoggedIn && this.currentUser) {
+            this.loggedOutSection.classList.add('hidden');
+            this.loggedInSection.classList.remove('hidden');
+            this.usernameDisplay.textContent = this.currentUser.displayName || this.currentUser.email.split('@')[0];
+        } else {
+            this.loggedOutSection.classList.remove('hidden');
+            this.loggedInSection.classList.add('hidden');
+        }
+        this.renderRoleView(this.userRole);
+    }
+
+    renderRoleView(role) {
+        if (!this.studentShell || !this.teacherShell || !this.prayerContentArea) return;
+
+        if (!this.isLoggedIn) {
+            this.studentShell.classList.add('hidden');
+            this.teacherShell.classList.add('hidden');
+            this.prayerContentArea.classList.remove('hidden');
+            return;
+        }
+
+        if (role === 'teacher') {
+            this.teacherShell.classList.remove('hidden');
+            this.studentShell.classList.add('hidden');
+            this.prayerContentArea.classList.add('hidden');
+        } else {
+            this.studentShell.classList.remove('hidden');
+            this.teacherShell.classList.add('hidden');
+            this.prayerContentArea.classList.remove('hidden');
+            // Ensure student tab bar is on 'times' tab
+            this.switchStudentTab('times');
+        }
+    }
+
+    switchStudentTab(tabName) {
+        this.studentTabBtns.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.studentTab === tabName);
+        });
+        const logTab = document.getElementById('student-log-tab');
+        if (tabName === 'log') {
+            this.prayerContentArea.classList.add('hidden');
+            if (logTab) logTab.classList.remove('hidden');
+        } else {
+            this.prayerContentArea.classList.remove('hidden');
+            if (logTab) logTab.classList.add('hidden');
+        }
+    }
+
+    openAuthModal(mode = 'login') {
+        this.authModal.classList.add('show');
+        this.switchAuthTab(mode);
+        document.body.style.overflow = 'hidden';
+    }
+
+    closeAuthModal() {
+        this.authModal.classList.remove('show');
+        document.body.style.overflow = '';
+        // Clear forms
+        this.loginForm.reset();
+        this.registerForm.reset();
+        // Clear any error messages
+        const existingError = document.querySelector('.auth-error');
+        if (existingError) {
+            existingError.remove();
+        }
+    }
+
+    switchAuthTab(tab) {
+        // Update tab buttons
+        this.authTabBtns.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.authTab === tab);
+        });
+
+        // Update tab content
+        document.querySelectorAll('.auth-tab-content').forEach(content => {
+            content.classList.toggle('active', content.id === `${tab}-tab`);
+        });
+
+        // Update modal title
+        this.authModalTitle.innerHTML = tab === 'login' 
+            ? '<i class="fas fa-user"></i> Login' 
+            : '<i class="fas fa-user-plus"></i> Create Account';
+    }
+
+    async handleLogin(e) {
+        e.preventDefault();
+        const email = document.getElementById('login-username').value.trim(); // Using email as username
+        const password = document.getElementById('login-password').value;
+
+        if (!email || !password) {
+            this.showAuthError('Please fill in all fields');
+            return;
+        }
+
+        try {
+            await this.signInWithEmailAndPassword(this.firebaseAuth, email, password);
+            this.closeAuthModal();
+            this.showSuccessMessage('Login successful!');
+        } catch (error) {
+            console.error('Login error:', error);
+            let errorMessage = 'Login failed';
+            
+            switch (error.code) {
+                case 'auth/user-not-found':
+                    errorMessage = 'No account found with this email';
+                    break;
+                case 'auth/wrong-password':
+                    errorMessage = 'Incorrect password';
+                    break;
+                case 'auth/invalid-email':
+                    errorMessage = 'Invalid email address';
+                    break;
+                case 'auth/too-many-requests':
+                    errorMessage = 'Too many failed attempts. Please try again later';
+                    break;
+                default:
+                    errorMessage = error.message;
+            }
+            
+            this.showAuthError(errorMessage);
+        }
+    }
+
+    async handleRegister(e) {
+        e.preventDefault();
+        const username = document.getElementById('register-username').value.trim();
+        const email = document.getElementById('register-email').value.trim();
+        const password = document.getElementById('register-password').value;
+        const confirmPassword = document.getElementById('register-password-confirm').value;
+
+        // Validation
+        if (!username || !email || !password || !confirmPassword) {
+            this.showAuthError('Please fill in all fields');
+            return;
+        }
+
+        if (username.length < 3) {
+            this.showAuthError('Username must be at least 3 characters');
+            return;
+        }
+
+        if (password.length < 6) {
+            this.showAuthError('Password must be at least 6 characters');
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            this.showAuthError('Passwords do not match');
+            return;
+        }
+
+        if (!this.selectedRole) {
+            this.showAuthError('Please select your role (Teacher or Student)');
+            if (this.roleError) this.roleError.classList.remove('hidden');
+            return;
+        }
+
+        try {
+            const userCredential = await this.createUserWithEmailAndPassword(this.firebaseAuth, email, password);
+            
+            // Update user profile with username
+            await this.updateProfile(userCredential.user, {
+                displayName: username
+            });
+
+            // Create user document in Firestore
+            await this.setDoc(this.doc(this.firebaseDb, 'users', userCredential.user.uid), {
+                username: username,
+                email: email,
+                role: this.selectedRole,
+                createdAt: this.serverTimestamp(),
+                loginCount: 1,
+                viewCount: 0,
+                lastLogin: this.serverTimestamp()
+            });
+
+            // Reset role selection state
+            this.selectedRole = null;
+            this.roleCards.forEach(c => c.classList.remove('selected'));
+
+            this.closeAuthModal();
+            this.showSuccessMessage('Account created successfully!');
+        } catch (error) {
+            console.error('Registration error:', error);
+            let errorMessage = 'Registration failed';
+            
+            switch (error.code) {
+                case 'auth/email-already-in-use':
+                    errorMessage = 'Email already registered';
+                    break;
+                case 'auth/invalid-email':
+                    errorMessage = 'Invalid email address';
+                    break;
+                case 'auth/weak-password':
+                    errorMessage = 'Password is too weak';
+                    break;
+                default:
+                    errorMessage = error.message;
+            }
+            
+            this.showAuthError(errorMessage);
+        }
+    }
+
+    async logout() {
+        try {
+            await this.signOut(this.firebaseAuth);
+            this.showSuccessMessage('Logged out successfully');
+        } catch (error) {
+            console.error('Logout error:', error);
+            this.showAuthError('Error logging out');
+        }
+    }
+
+    openAccountModal() {
+        if (!this.isLoggedIn) return;
+        
+        this.accountModal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+        this.populateAccountInfo();
+    }
+
+    closeAccountModal() {
+        this.accountModal.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+
+    async populateAccountInfo() {
+        if (!this.currentUser) return;
+
+        try {
+            const userDocRef = this.doc(this.firebaseDb, 'users', this.currentUser.uid);
+            const userDoc = await this.getDoc(userDocRef);
+            const userData = userDoc.exists() ? userDoc.data() : {};
+
+            document.getElementById('account-username').textContent = this.currentUser.displayName || 'User';
+            document.getElementById('account-email').textContent = this.currentUser.email;
+            document.getElementById('account-created').textContent = userData.createdAt ? 
+                userData.createdAt.toDate().toLocaleDateString() : 'Unknown';
+            document.getElementById('account-logins').textContent = userData.loginCount || 0;
+            document.getElementById('account-last-login').textContent = userData.lastLogin ? 
+                userData.lastLogin.toDate().toLocaleString() : 'Never';
+            document.getElementById('account-views').textContent = userData.viewCount || 0;
+        } catch (error) {
+            console.error('Error loading account info:', error);
+        }
+    }
+
+    updateUserStats() {
+        // This is now handled automatically in loadUserData when user logs in
+        // and in handleAuthStateChange when viewing prayer times
+    }
+
+    showAuthError(message) {
+        // Remove existing error messages
+        const existingError = document.querySelector('.auth-error');
+        if (existingError) {
+            existingError.remove();
+        }
+
+        // Create error message
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'auth-error';
+        errorDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+        
+        // Insert into active auth form
+        const activeTab = document.querySelector('.auth-tab-content.active');
+        const form = activeTab.querySelector('.auth-form');
+        form.insertBefore(errorDiv, form.firstChild);
+
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (errorDiv.parentNode) {
+                errorDiv.remove();
+            }
+        }, 5000);
+    }
+
+    showSuccessMessage(message) {
+        // Create success notification
+        const successDiv = document.createElement('div');
+        successDiv.className = 'success-notification';
+        successDiv.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+        
+        // Add to page
+        document.body.appendChild(successDiv);
+        
+        // Show with animation
+        setTimeout(() => successDiv.classList.add('show'), 10);
+        
+        // Auto-remove after 3 seconds
+        setTimeout(() => {
+            successDiv.classList.remove('show');
+            setTimeout(() => successDiv.remove(), 300);
+        }, 3000);
     }
 }
 

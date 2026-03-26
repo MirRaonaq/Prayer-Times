@@ -18,10 +18,44 @@
                         <img src="logo-prayertime.png" alt="Prayer Times Logo" class="logo-image">
                     </div>
                 </div>
-                <h1 class="title">
-                    Prayer Times
-                </h1>
-                <p class="subtitle">Your daily prayer schedule</p>
+                
+                <div class="title-content">
+                    <h1 class="title">
+                        Prayer Times
+                    </h1>
+                    <p class="subtitle">Your daily prayer schedule</p>
+                </div>
+                
+                <!-- User Authentication Section -->
+                <div class="user-section">
+                    <div id="logged-out-section" class="auth-section">
+                        <button id="login-btn" class="auth-btn">
+                            <i class="fas fa-user"></i>
+                            Login
+                        </button>
+                        <button id="register-btn" class="auth-btn">
+                            <i class="fas fa-user-plus"></i>
+                            Register
+                        </button>
+                    </div>
+                    
+                    <div id="logged-in-section" class="auth-section hidden">
+                        <div class="user-info">
+                            <i class="fas fa-user-circle"></i>
+                            <span id="username-display">User</span>
+                        </div>
+                        <div class="user-actions">
+                            <button id="account-btn" class="auth-btn">
+                                <i class="fas fa-cog"></i>
+                                Account
+                            </button>
+                            <button id="logout-btn" class="auth-btn">
+                                <i class="fas fa-sign-out-alt"></i>
+                                Logout
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </header>
 
@@ -94,6 +128,165 @@
                 </div>
             </div>
 
+            <!-- Login/Register Modal -->
+            <div id="auth-modal" class="modal">
+                <div class="modal-content auth-modal-content">
+                    <div class="modal-header">
+                        <h3 id="auth-modal-title"><i class="fas fa-user"></i> Login</h3>
+                        <button id="close-auth-modal" class="close-btn" title="Close modal" aria-label="Close authentication modal">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="auth-tabs">
+                            <button class="auth-tab-btn active" data-auth-tab="login">Login</button>
+                            <button class="auth-tab-btn" data-auth-tab="register">Register</button>
+                        </div>
+                        
+                        <!-- Login Form -->
+                        <div class="auth-tab-content active" id="login-tab">
+                            <form id="login-form" class="auth-form">
+                                <div class="input-group">
+                                    <label for="login-username">Email:</label>
+                                    <input type="email" id="login-username" required placeholder="Enter your email">
+                                </div>
+                                <div class="input-group">
+                                    <label for="login-password">Password:</label>
+                                    <input type="password" id="login-password" required placeholder="Enter your password">
+                                </div>
+                                <button type="submit" class="auth-submit-btn">
+                                    <i class="fas fa-sign-in-alt"></i>
+                                    Login
+                                </button>
+                            </form>
+                        </div>
+                        
+                        <!-- Register Form -->
+                        <div class="auth-tab-content" id="register-tab">
+                            <form id="register-form" class="auth-form">
+                                <div class="input-group">
+                                    <label for="register-username">Username:</label>
+                                    <input type="text" id="register-username" required placeholder="Choose a username" minlength="3" maxlength="20">
+                                </div>
+                                <div class="input-group">
+                                    <label for="register-email">Email:</label>
+                                    <input type="email" id="register-email" required placeholder="Enter your email">
+                                </div>
+                                <div class="input-group">
+                                    <label for="register-password">Password:</label>
+                                    <input type="password" id="register-password" required placeholder="Create a password" minlength="6">
+                                </div>
+                                <div class="input-group">
+                                    <label for="register-password-confirm">Confirm Password:</label>
+                                    <input type="password" id="register-password-confirm" required placeholder="Confirm your password">
+                                </div>
+                                <!-- Role Selection -->
+                                <div class="input-group">
+                                    <label>I am a:</label>
+                                    <div class="role-cards" id="role-cards">
+                                        <div class="role-card" id="role-card-teacher" data-role="teacher">
+                                            <span class="role-card-icon">🏫</span>
+                                            <span class="role-card-label">Teacher</span>
+                                        </div>
+                                        <div class="role-card" id="role-card-student" data-role="student">
+                                            <span class="role-card-icon">📖</span>
+                                            <span class="role-card-label">Student</span>
+                                        </div>
+                                    </div>
+                                    <p id="role-error" class="field-error hidden">Please select your role</p>
+                                </div>
+                                <button type="submit" class="auth-submit-btn">
+                                    <i class="fas fa-user-plus"></i>
+                                    Create Account
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Account Information Modal -->
+            <div id="account-modal" class="modal">
+                <div class="modal-content account-modal-content">
+                    <div class="modal-header">
+                        <h3><i class="fas fa-user-cog"></i> Account Information</h3>
+                        <button id="close-account-modal" class="close-btn" title="Close modal" aria-label="Close account modal">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="account-info">
+                            <div class="account-section">
+                                <h4><i class="fas fa-user"></i> Profile</h4>
+                                <div class="account-detail">
+                                    <span class="label">Username:</span>
+                                    <span id="account-username">--</span>
+                                </div>
+                                <div class="account-detail">
+                                    <span class="label">Email:</span>
+                                    <span id="account-email">--</span>
+                                </div>
+                                <div class="account-detail">
+                                    <span class="label">Member Since:</span>
+                                    <span id="account-created">--</span>
+                                </div>
+                            </div>
+                            
+                            <div class="account-section">
+                                <h4><i class="fas fa-chart-line"></i> Statistics</h4>
+                                <div class="account-detail">
+                                    <span class="label">Total Logins:</span>
+                                    <span id="account-logins">--</span>
+                                </div>
+                                <div class="account-detail">
+                                    <span class="label">Last Login:</span>
+                                    <span id="account-last-login">--</span>
+                                </div>
+                                <div class="account-detail">
+                                    <span class="label">Prayer Times Viewed:</span>
+                                    <span id="account-views">--</span>
+                                </div>
+                            </div>
+                            
+                            <div class="account-section">
+                                <h4><i class="fas fa-cog"></i> Settings</h4>
+                                <div class="account-actions">
+                                    <button id="change-password-btn" class="account-action-btn">
+                                        <i class="fas fa-key"></i>
+                                        Change Password
+                                    </button>
+                                    <button id="export-data-btn" class="account-action-btn">
+                                        <i class="fas fa-download"></i>
+                                        Export Data
+                                    </button>
+                                    <button id="delete-account-btn" class="account-action-btn danger">
+                                        <i class="fas fa-trash"></i>
+                                        Delete Account
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Student Shell: tab bar + My Log tab (shown to logged-in students) -->
+            <div id="student-shell" class="hidden">
+                <div class="student-tab-bar">
+                    <button class="student-tab-btn active" data-student-tab="times">Today's Times</button>
+                    <button class="student-tab-btn" data-student-tab="log">My Log</button>
+                </div>
+                <!-- My Log Tab (Phase 1: placeholder only) -->
+                <div id="student-log-tab" class="student-tab-content hidden">
+                    <div class="log-placeholder">
+                        <i class="fas fa-clipboard-list"></i>
+                        <p>Your prayer log will appear here in the next update.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prayer Content Area: shown for logged-out users and logged-in students -->
+            <div id="prayer-content-area">
             <div class="loading-container" id="loading">
                 <div class="loading-spinner"></div>
                 <p>Loading prayer times...</p>
@@ -192,6 +385,17 @@
             <div class="date-info">
                 <p id="date-display">Loading date...</p>
             </div>
+            </div><!-- end #prayer-content-area -->
+
+            <!-- Teacher Shell: shown to logged-in teachers only -->
+            <div id="teacher-shell" class="hidden">
+                <div class="teacher-dashboard-placeholder">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                    <h2>Teacher Dashboard</h2>
+                    <p>Your student roster and prayer tracking will appear here.</p>
+                </div>
+            </div>
+
         </main>
 
         <footer class="footer">
@@ -199,6 +403,35 @@
         </footer>
     </div>
 
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+        import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+        import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
+        
+        // Your web app's Firebase configuration
+        // TODO: Replace with your Firebase project configuration
+        const firebaseConfig = {
+            apiKey: "your-api-key",
+            authDomain: "your-project.firebaseapp.com",
+            projectId: "your-project-id",
+            storageBucket: "your-project.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "your-app-id"
+        };
+        
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        // Make Firebase available globally
+        window.firebaseApp = app;
+        window.firebaseAuth = auth;
+        window.firebaseDb = db;
+    </script>
+    
     <script src="script.js"></script>
 </body>
 </html> 
