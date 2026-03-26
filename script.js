@@ -1115,10 +1115,10 @@ class PrayerTimesApp {
                     if (nextItem) {
                         nextItem.classList.add('selected');
                     } else {
-                        items[0]?.classList.add('selected');
+                        if (items[0]) items[0].classList.add('selected');
                     }
                 } else {
-                    items[0]?.classList.add('selected');
+                    if (items[0]) items[0].classList.add('selected');
                 }
                 break;
                 
@@ -1130,10 +1130,10 @@ class PrayerTimesApp {
                     if (prevItem) {
                         prevItem.classList.add('selected');
                     } else {
-                        items[items.length - 1]?.classList.add('selected');
+                        if (items[items.length - 1]) items[items.length - 1].classList.add('selected');
                     }
                 } else {
-                    items[items.length - 1]?.classList.add('selected');
+                    if (items[items.length - 1]) items[items.length - 1].classList.add('selected');
                 }
                 break;
                 
@@ -1783,7 +1783,7 @@ class PrayerTimesApp {
                     <span class="detail-prayer-time" style="color:#bbb">Not logged</span>
                 </div>`;
             }
-            const ts = log.timestamp?.toDate ? log.timestamp.toDate() : new Date(log.timestamp);
+            const ts = (log.timestamp && log.timestamp.toDate) ? log.timestamp.toDate() : new Date(log.timestamp);
             const timeStr = ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             const badge = log.status === 'ontime'
                 ? `<span class="log-status-badge ontime">On time</span>`
